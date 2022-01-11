@@ -4,11 +4,16 @@
   "description": "bot for checking the block sync of an ICON node",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node scripts/build.js",
+    "fresh-start": "rm data/PReps.json && npm run start",
+    "start": "node index.js"
   },
   "author": "fidelve",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.24.0"
+    "dotenv": "^11.0.0",
+    "node-cron": "^3.0.0",
+    "telegraf": "^4.5.2"
   }
 }

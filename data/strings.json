@@ -1,0 +1,37 @@
+{
+  "preIP": "http://",
+  "postIP": ":9000/admin/chain/0x1",
+  "path1" : "/admin/chain/0x1",
+  "port1" : 9000,
+  "path2":  "/api/v3",
+  "msg0" : "Run /start command to configure bot",
+  "msg1": "To initialize the bot, add a node or citizen node to monitor using the menu. With the menu you can also edit the nodes you have already added",
+  "msg2": "You havent added any nodes to monitor, send '/start' command and use the option 'Add Node'",
+  "replyCmdString": "Use the /help command to get a description of this bot",
+  "infoCmdString": "This is the EspaniconBot created by ICON Prep Team Espanicon, to know more about this bot functionality you can contact @Espanicon_Prep.\nThis is a list of commands you can use with this bot:\n/start => command used to initialize the bot.\n/info => prints this message\n/checkMonitoredNodesHeight => prints the block gap between the ICON chain and the nodes to be monitored\n/checkMonitoredAndBlockProducersHeight => prints the current block in the chain and the highest block for each block producer and your monitored nodes\n/checkBlockProducersHeight => prints the current block in the chain and the highest block for each block producers\n/updatePrepsList => Updates the list of block producers to check (Preps).\n/showListOfPreps => Replies with a list of the block producers in the network (Preps)",
+  "defaultErrorMsg": "Unexpected Error while running command",
+  "NODES_BLOCK_HEIGHT_REPLIES": {
+    "msg0": "Block height status of nodes: \n",
+    "msg1": "Running command, this might take a minute, please wait...",
+    "msg2": "Error querying the nodes",
+    "msg3": "✅ Node Status Message ✅\n\nNode block height recovered",
+    "msg4" : "❌ Node Status Message ❌\n\nNode block height out of sync"
+  },
+  "actions": {
+    "add": {
+      "tag": "ADD_NODE",
+      "label": "ADD_NODE_WIZARD",
+      "msg": "Add node"
+    },
+    "edit": {
+      "tag": "EDIT_NODES",
+      "label": "EDIT_NODES_WIZARD",
+      "msg": "Edit nodes"
+    },
+    "check": {
+      "tag": "CHECK_NODES",
+      "label": "CHECK_NODES_WIZARD",
+      "msg": "Check nodes"
+    }
+  }
+}
