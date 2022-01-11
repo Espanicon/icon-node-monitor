@@ -1,0 +1,14 @@
+{
+  "name": "blocksync-bot",
+  "version": "1.0.0",
+  "description": "bot for checking the block sync of an ICON node",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "fidelve",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.24.0"
+  }
+}
