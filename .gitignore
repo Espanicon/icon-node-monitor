@@ -5,7 +5,7 @@ node_modules/
 nogit/
 
 # misc files
-.env
+# .env
 TODO
 data/templates
 data/preps.json
