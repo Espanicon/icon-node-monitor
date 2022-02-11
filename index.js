@@ -4,7 +4,7 @@ const { Telegraf, session, Markup, Scenes } = require("telegraf");
 const fs = require("fs");
 const cron = require("node-cron");
 const { botCommands, botReplyMaker, customScenes } = require("./bot");
-const { syncGetPreps, customPath, cronSchedule } = require("./services");
+const { syncGetPreps, customPath, tasks } = require("./services");
 
 // global constants
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -141,17 +141,22 @@ espaniconBot.command("checkMonitoredNodesHeight", async ctx => {
 // Running the bot
 espaniconBot.launch();
 
-// Running cron task
+// Function to send message to TG group
 function botSendMsgFunction(groupId, reply) {
   espaniconBot.telegram.sendMessage(groupId, reply);
 }
-const every10MinutesTask = cronSchedule.runEvery10Minutes(
-  botSendMsgFunction,
-  GROUP_ID,
-  botCommands.checkMonitoredAndBlockProducersHeight
-);
 
-every10MinutesTask.start();
+// Running recursive check with setTimeout
+function runEveryMinute() {
+  tasks.checkMonitoredNodesTask(
+    botSendMsgFunction,
+    GROUP_ID,
+    botCommands.checkMonitoredAndBlockProducersHeight
+  );
+
+  setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
+}
+setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
 
 // Catching uncaught exceptions
 //
@@ -161,5 +166,5 @@ process.on("uncaughtException", err => {
 });
 
 // Enable graceful stop
-process.once("SIGINT", () => bot.stop("SIGINT"));
-process.once("SIGTERM", () => bot.stop("SIGTERM"));
+process.once("SIGINT", () => espaniconBot.stop("SIGINT"));
+process.once("SIGTERM", () => espaniconBot.stop("SIGTERM"));

@@ -1,19 +1,17 @@
 {
-  "name": "blocksync-bot",
+  "name": "icon-node-monitor",
   "version": "1.0.0",
   "description": "bot for checking the block sync of an ICON node",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "node scripts/build.js",
-    "fresh-start": "rm data/PReps.json && npm run start",
     "start": "node index.js"
   },
   "author": "fidelve",
   "license": "MIT",
   "dependencies": {
     "dotenv": "^11.0.0",
-    "node-cron": "^3.0.0",
     "telegraf": "^4.5.2"
   }
 }

@@ -12,6 +12,11 @@ function getBlankState() {
     isInAlert: false
   };
 }
+const INTERVALS = {
+  oneSecond: 1000,
+  oneMinute: 60000,
+  tenMinutes: 600000
+};
 const MAX_ALLOWED_BLOCK_GAP = 100;
 const STATE_PATH = "data/state.json";
 const MONITOR_PATH = "data/monitor.json";
@@ -65,6 +70,7 @@ async function checkMonitoredNodesTask(botContext, botId, makeCheck) {
     const monitored = JSON.parse(
       fs.readFileSync(customPath(MONITOR_PATH), "utf8")
     );
+    console.log(monitored);
     if (monitored.monitored.length > 0) {
       try {
         let firstState = null;
@@ -117,19 +123,5 @@ async function checkMonitoredNodesTask(botContext, botId, makeCheck) {
   }
 }
 
-function runEvery10Minutes(botContext, botId, makeCheck) {
-  // cron task that runs every 10 minutes
-  let task = cron.schedule(
-    "*/10 * * * *",
-    async () => {
-      await checkMonitoredNodesTask(botContext, botId, makeCheck);
-    },
-    {
-      scheduled: false
-    }
-  );
-  return task;
-}
-
-exports.runEvery10Minutes = runEvery10Minutes;
 exports.checkMonitoredNodesTask = checkMonitoredNodesTask;
+exports.INTERVALS = INTERVALS;

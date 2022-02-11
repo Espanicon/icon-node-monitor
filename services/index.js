@@ -4,4 +4,4 @@
 exports.getChainAndNodesHeight = require("./getChainAndNodesHeight.js");
 exports.syncGetPreps = require("./syncGetPreps.js");
 exports.customPath = require("./customPath.js");
-exports.cronSchedule = require("./cronSchedule.js");
+exports.tasks= require("./tasks.js");
