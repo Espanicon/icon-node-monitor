@@ -6,6 +6,7 @@ To use the bot please follow the instructions in the **Install** section.
 
 ## How to use
 To start using the bot, send the command `/start`, the bot will reply with a message asking you to add the nodes you would like to monitor.
+
 ![adding a node to monitor](./misc/images/icon-node-monitor-1.png)
 
 After adding a node, you can use any of the bots commands. Currently the bot has the following commands (you can always send `/info` as a command to the bot to get the list of commands):
@@ -29,7 +30,7 @@ You will need a bot authentication token from telegram, to get one you can follo
 Create a `.env` file inside the project folder. The content of this file should look like this:
 ```
 BOT_TOKEN="YOUR_AUTHENTICATION_TOKEN"
-GROUP_ID="000000000"
+GROUP_ID="USER_OR_GROUP_ID"
 ```
 
 In the `BOT_TOKEN` variable paste the authentication token you got from *BotFather* and in the `GROUP_ID` variable you need to paste either the id of a telegram group in which the bot has been added or the id of the telegram user that will receive the alerts. To find either your telegram id or the id of a telegram group you can use [IDBot](https://telegram.me/myidbot).
@@ -40,6 +41,3 @@ You can now run your own version of the bot locally with the command `npm run st
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
-
-
-

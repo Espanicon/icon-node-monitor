@@ -2,7 +2,6 @@
 //
 const fs = require("fs");
 const { customPath } = require("../services");
-const cron = require("node-cron");
 const STRINGS = JSON.parse(fs.readFileSync(customPath("data/strings.json")));
 
 function getBlankState() {

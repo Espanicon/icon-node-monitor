@@ -2,7 +2,6 @@
 require("dotenv").config();
 const { Telegraf, session, Markup, Scenes } = require("telegraf");
 const fs = require("fs");
-const cron = require("node-cron");
 const { botCommands, botReplyMaker, customScenes } = require("./bot");
 const { syncGetPreps, customPath, tasks } = require("./services");
 
