@@ -159,9 +159,30 @@ setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
 
 // Catching uncaught exceptions
 //
+function isTelegramErrorType(error) {
+  try {
+    let constructorString = error.constructor.toString();
+    if (constructorString.includes("TelegramError")) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (err) {
+    console.log("Error while getting constructor", err);
+  }
+}
 process.on("uncaughtException", err => {
-  console.error("Uncaught error: ", err);
-  process.exit(1);
+  let killApp = true;
+  if (isTelegramErrorType(err)) {
+    console.log(
+      "Unexpected error of type 'TelegramError'. Make sure the GROUP_ID value is valid in the '.env' file\n",
+      err
+    );
+    killApp = true;
+  }
+  if (killApp) {
+    process.exit(1);
+  }
 });
 
 // Enable graceful stop
