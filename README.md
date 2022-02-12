@@ -37,7 +37,26 @@ In the `BOT_TOKEN` variable paste the authentication token you got from *BotFath
 
 You can now run your own version of the bot locally with the command `npm run start`
 
+### Running icon-node-monitor as a service on linux
 
+The bot can also be configured to run as a service on a linux server, here is an [article explaining how to run **nodejs** applications as a service on linux](https://nodesource.com/blog/running-your-node-js-app-with-systemd-part-1/).
+
+To summarize you need to create a `.service` (in this example the name is `icon-node-monitor.service`) file and copy the file to `/etc/systemd/system` folder. Here is a template that you can use for the `.service` file, modify the paths to fix your own configuration:
+
+```
+[Unit]
+Description=Icon node monitor
+
+[Service]
+ExecStart=/usr/bin/node /home/{USER}/icon-node-monitor/index.js
+Restart=on-failure
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=NODE_ENV=production
+WorkingDirectory=/home/{USER}/icon-node-monitor
+```
+
+After that simply run `sudo systemctl icon-node-monitor.service` to run the bot in the background as a service.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+
