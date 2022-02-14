@@ -8,10 +8,19 @@
     "build": "node scripts/build.js",
     "start": "node index.js"
   },
+  "keywords": ["ICON", "blockchain", "telegram", "bot"],
   "author": "fidelve",
   "license": "MIT",
   "dependencies": {
     "dotenv": "^11.0.0",
     "telegraf": "^4.5.2"
+  },
+  "engines": {
+    "node": ">=14.4.0",
+    "npm": ">=6.13.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FidelVe/icon-node-monitor.git"
   }
 }
