@@ -20,6 +20,8 @@ After adding a node, you can use any of the bots commands. Currently the bot has
 
 Adding a group id or user id in the `.env` file will allow the bot to run a check every minute and send an alarm to the user or group you have specified.
 
+![auto check every minute](./misc/images/icon-node-monitor-2.png)
+
 ## Install
 To run your own version of the bot locally you will need [nodejs](https://nodejs.org/en/download/) version 17.4.0 or newer.
 
@@ -59,4 +61,3 @@ After that simply run `sudo systemctl icon-node-monitor.service` to run the bot 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
-
