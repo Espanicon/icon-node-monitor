@@ -38,37 +38,24 @@ function initializeSession(node = null) {
   return session;
 }
 
-// Bot wizard scene
-const addNodeWizard = customScenes.addNodeWizard;
-const checkNodesWizard = customScenes.checkNodesWizard;
-const editNodesWizard = customScenes.editNodesWizard;
-
 // creating new Bot instance
 const espaniconBot = new Telegraf(BOT_TOKEN);
 const stage = new Scenes.Stage([
-  addNodeWizard,
-  checkNodesWizard,
-  editNodesWizard
+  customScenes.addNodeWizard,
+  customScenes.checkNodesWizard,
+  customScenes.editNodesWizard,
+  customScenes.addTaskWizard,
+  customScenes.editTaskWizard,
+  customScenes.checkTaskWizard
 ]);
 espaniconBot.use(session());
 espaniconBot.use(stage.middleware());
 
 // Bot actions
-espaniconBot.action(STRINGS.actions.add.tag, (ctx, next) => {
-  ctx.scene.enter(STRINGS.actions.add.label);
-});
-espaniconBot.action(STRINGS.actions.check.tag, (ctx, next) => {
-  ctx.scene.enter(STRINGS.actions.check.label);
-});
-espaniconBot.action(STRINGS.actions.edit.tag, (ctx, next) => {
-  ctx.scene.enter(STRINGS.actions.edit.label);
-});
-
-// bot commands
-// start command
-espaniconBot.command("start", ctx => {
+// BEGIN NODES BUTTON STRUCTURE
+espaniconBot.action(STRINGS.actions.nodes.tag, (ctx, next) => {
   ctx.reply(
-    STRINGS.msg1,
+    STRINGS.msg3,
     Markup.inlineKeyboard([
       Markup.button.callback(STRINGS.actions.add.msg, STRINGS.actions.add.tag),
       Markup.button.callback(
@@ -79,6 +66,62 @@ espaniconBot.command("start", ctx => {
         STRINGS.actions.check.msg,
         STRINGS.actions.check.tag
       )
+    ])
+  );
+});
+espaniconBot.action(STRINGS.actions.add.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.add.label);
+});
+espaniconBot.action(STRINGS.actions.check.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.check.label);
+});
+espaniconBot.action(STRINGS.actions.edit.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.edit.label);
+});
+// END NODES BUTTON STRUCTURE
+
+// BEGIN REPORT BUTTON STRUCTURE
+espaniconBot.action(STRINGS.actions.task.tag, (ctx, next) => {
+  ctx.reply(
+    STRINGS.msg4,
+    Markup.inlineKeyboard([
+      Markup.button.callback(
+        STRINGS.actions.add_task.msg,
+        STRINGS.actions.add_task.tag
+      ),
+      Markup.button.callback(
+        STRINGS.actions.edit_task.msg,
+        STRINGS.actions.edit_task.tag
+      ),
+      Markup.button.callback(
+        STRINGS.actions.check_task.msg,
+        STRINGS.actions.check_task.tag
+      )
+    ])
+  );
+});
+espaniconBot.action(STRINGS.actions.add_task.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.add_task.label);
+});
+espaniconBot.action(STRINGS.actions.check_task.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.check_task.label);
+});
+espaniconBot.action(STRINGS.actions.edit_task.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.edit_task.label);
+});
+// END NODES BUTTON STRUCTURE
+
+// bot commands
+// start command
+espaniconBot.command("start", ctx => {
+  ctx.reply(
+    STRINGS.msg1,
+    Markup.inlineKeyboard([
+      Markup.button.callback(
+        STRINGS.actions.nodes.msg,
+        STRINGS.actions.nodes.tag
+      ),
+      Markup.button.callback(STRINGS.actions.task.msg, STRINGS.actions.task.tag)
     ])
   );
 });
@@ -155,7 +198,11 @@ function runEveryMinute() {
 
   setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
 }
-setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
+if (process.env.GROUP_ID === undefined) {
+  console.log("Chat ID not specified, bypassing recursive task");
+} else {
+  setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
+}
 
 // Catching uncaught exceptions
 //
@@ -179,6 +226,9 @@ process.on("uncaughtException", err => {
       err
     );
     killApp = true;
+  } else {
+    console.log("uncaughtException : ", err);
+    process.exit(1);
   }
   if (killApp) {
     process.exit(1);

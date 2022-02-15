@@ -5,8 +5,10 @@
   "port1" : 9000,
   "path2":  "/api/v3",
   "msg0" : "Run /start command to configure bot",
-  "msg1": "To initialize the bot, add a node or citizen node to monitor using the menu. With the menu you can also edit the nodes you have already added",
+  "msg1": "To initialize the bot, add a node or citizen node to monitor using the menu. Click on the 'Nodes' button to add any node you would like to monitor, and use the 'Reports' button to configure a recursive check that will run every minute and will send an alarm to any telegram user or group chat you specify in the case that any of your nodes is offline or lagging in blocks by more than 100 blocks compared to the ICON Network",
+  "msg3": "Use the 'Add node' button to add nodes you would like to check and monitor. With the 'Edit' and 'Check' buttons you can remove nodes from your list of monitored nodes and see the nodes you are currently monitoring",
   "msg2": "You havent added any nodes to monitor, send '/start' command and use the option 'Add Node'",
+  "msg4": "This bot runs a recursive check every minute to verify the status of the nodes you are currently monitoring. To activate this check use the 'Add user/group' button, any user or group you add to this list will receive alerts in the case any of your nodes is currently offline or lagin in blocks by more than 100 blocks compared to the ICON Network. You can use the 'Edit' and 'Check' buttons to remove users from this list and check the list",
   "replyCmdString": "Use the /help command to get a description of this bot",
   "infoCmdString": "This is the EspaniconBot created by ICON Prep Team Espanicon, to know more about this bot functionality you can contact @Espanicon_Prep.\nThis is a list of commands you can use with this bot:\n/start => command used to initialize the bot.\n/info => prints this message\n/checkMonitoredNodesHeight => prints the block gap between the ICON chain and the nodes to be monitored\n/checkMonitoredAndBlockProducersHeight => prints the current block in the chain and the highest block for each block producer and your monitored nodes\n/checkBlockProducersHeight => prints the current block in the chain and the highest block for each block producers\n/updatePrepsList => Updates the list of block producers to check (Preps).\n/showListOfPreps => Replies with a list of the block producers in the network (Preps)",
   "defaultErrorMsg": "Unexpected Error while running command",
@@ -32,6 +34,31 @@
       "tag": "CHECK_NODES",
       "label": "CHECK_NODES_WIZARD",
       "msg": "Check nodes"
+    },
+    "nodes": {
+      "tag": "SHOW_NODES",
+      "label": "SHOW_NODES_WIZARD",
+      "msg": "Nodes"
+    },
+    "task": {
+      "tag": "ENTER_REPORT",
+      "label": "ENTER_REPORT_WIZARD",
+      "msg": "Reports"
+    },
+    "add_task": {
+      "tag": "ADD_REPORT",
+      "label": "ADD_REPORT_WIZARD",
+      "msg": "Add user/group"
+    },
+    "edit_task": {
+      "tag": "EDIT_REPORT",
+      "label": "EDIT_REPORT_WIZARD",
+      "msg": "Edit user/group"
+    },
+    "check_task": {
+      "tag": "CHECK_REPORT",
+      "label": "CHECK_REPORT_WIZARD",
+      "msg": "Check list"
     }
   }
 }
