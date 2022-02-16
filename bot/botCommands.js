@@ -6,6 +6,7 @@ const {
   customPath
 } = require("../services");
 const fs = require("fs");
+const { model } = require("../model");
 
 const PREPS_PATH = "data/preps.json";
 
@@ -48,7 +49,9 @@ async function checkMonitoredAndBlockProducersHeight(
   };
 }
 
-function addMeToReport(userObj) {}
+function addMeToReport(ctxFrom) {
+  return model.updateDbReport(ctxFrom);
+}
 
 function updatePrepsList() {
   syncGetPreps(customPath(PREPS_PATH));

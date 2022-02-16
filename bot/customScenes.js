@@ -19,6 +19,7 @@ const addNodeWizard = new Scenes.WizardScene(
   ctx => {
     // Wizard step 1
     ctx.reply("enter a name for the node you want to monitor");
+    model.addBotAdmin(ctx.from);
     ctx.wizard.state.data = {};
     return ctx.wizard.next();
   },
@@ -54,19 +55,36 @@ const editNodesWizard = new Scenes.WizardScene(
     // Wizard step 1
     // Load db
     ctx.session.db = model.readDb();
-    if (ctx.session.db.monitored.length > 0) {
-      // If nodes have been added to be monitored show them and ask user
-      // to select one
-      let reply =
-        "Please reply with the ip or name of the node you want to remove:\n\n";
-      for (let node of ctx.session.db.monitored) {
-        reply = reply + `Node name: ${node.name}\nNode ip: ${node.ip}\n\n`;
-      }
-      ctx.reply(reply);
-    } else {
-      // if no node have been added print message and leave wizard
-      ctx.reply(STRINGS.msg2);
+    if (
+      ctx.session.db.locked === true &&
+      ctx.from.id != ctx.session.db.admin.id
+    ) {
+      // Bot admin is the only one that can delete nodes from monitoring
+      ctx.reply(
+        `Only the bot admin can edit the list of nodes being monitored, currently the bot admin is @${ctx.session.db.admin.username}. Contact bot admin if you want to edit the list of nodes being monitored.`
+      );
       return ctx.scene.leave();
+    } else {
+      //
+      if (ctx.from.id === ctx.session.db.admin.id) {
+        // the current user is the bot admin
+        if (ctx.session.db.monitored.length > 0) {
+          // If nodes have been added to be monitored show them and ask user
+          // to select one
+          let reply =
+            "Please reply with the ip or name of the node you want to remove:\n\n";
+          for (let node of ctx.session.db.monitored) {
+            reply = reply + `Node name: ${node.name}\nNode ip: ${node.ip}\n\n`;
+          }
+          ctx.reply(reply);
+        } else {
+          // if no node have been added print message and leave wizard
+          ctx.reply(STRINGS.msg2);
+          return ctx.scene.leave();
+        }
+      } else {
+        model.addBotAdmin(ctx.from);
+      }
     }
     return ctx.wizard.next();
   },

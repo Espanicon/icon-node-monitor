@@ -17,8 +17,23 @@ function dbInitState() {
     monitored: [],
     report: [],
     admin: { id: null, username: null },
-    state: { locked: true }
+    state: { locked: false }
   };
+}
+
+function addBotAdmin(ctxFrom) {
+  let db = readDb();
+  if (db.state.locked === false) {
+    db.admin.id = ctxFrom.id;
+    db.admin.username = ctxFrom.username;
+    db.state.locked = true;
+    writeDb(db);
+    console.log(`Successfully added user ${db.admin.username} as bot admin`);
+  } else {
+    console.log(
+      `Current user was not added as admin because the bot admin state is currently locked and admin was already added. Current bot admin is ${db.admin.username}`
+    );
+  }
 }
 
 function readDb() {
@@ -34,7 +49,20 @@ function readDb() {
 function writeDb(data) {
   fs.writeFileSync(customPath(_DB_), JSON.stringify(data));
 }
-
+function updateDbReport(data) {
+  /*
+   * data: [{username: string, id: number}]
+   */
+  let db = readDb();
+  for (let eachUser of db.report) {
+    if (eachUser.id === data.id) {
+      return "User is already added to the report list";
+    }
+  }
+  db.report.push({ username: data.username, id: data.id });
+  writeDb(db);
+  return "User added to report list";
+}
 function updateDbMonitored(data, typeOfUpdate) {
   /*
    * data: [{name: string, ip: number}]
@@ -95,5 +123,7 @@ function updateDbMonitored(data, typeOfUpdate) {
 module.exports = {
   readDb: readDb,
   writeDb: writeDb,
-  updateDbMonitored: updateDbMonitored
+  updateDbMonitored: updateDbMonitored,
+  addBotAdmin: addBotAdmin,
+  updateDbReport: updateDbReport
 };

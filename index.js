@@ -27,20 +27,6 @@ try {
 }
 
 // Functions
-function initializeSession(node = null) {
-  let session = {
-    hasInitialized: true,
-    monitored: [],
-    report: [],
-    general: {
-      admin: null
-    }
-  };
-  if (node !== null) {
-    session.monitored.push(node);
-  }
-  return session;
-}
 
 // creating new Bot instance
 const espaniconBot = new Telegraf(BOT_TOKEN);
@@ -135,10 +121,8 @@ espaniconBot.command("/info", ctx => {
 });
 // /addMeToReport command
 espaniconBot.command("/addMeToReport", ctx => {
-  //console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(ctx)));
-  ctx.session.report.push({ id: ctx.from.id, username: ctx.from.username });
-  ctx.reply(`User ${ctx.from.username} has been added to report list`);
-  botCommands.addMeToReport(ctx.from);
+  let reply = botCommands.addMeToReport(ctx.from);
+  ctx.reply(reply);
 });
 // /showListOfMonitored command
 espaniconBot.command("/showListOfMonitored", ctx => {
@@ -199,25 +183,32 @@ espaniconBot.command("checkMonitoredNodesHeight", async ctx => {
 espaniconBot.launch();
 
 // Function to send message to TG group
-function botSendMsgFunction(groupId, reply) {
-  espaniconBot.telegram.sendMessage(groupId, reply);
+function botSendMsgFunction(arrayOfUsersToReport, reply) {
+  for (let eachUserToReport of arrayOfUsersToReport) {
+    espaniconBot.telegram.sendMessage(eachUserToReport.id, reply);
+  }
 }
 
 // Running recursive check with setTimeout
 function runEveryMinute() {
-  tasks.checkMonitoredNodesTask(
-    botSendMsgFunction,
-    GROUP_ID,
-    botCommands.checkMonitoredAndBlockProducersHeight
-  );
+  if (fs.existsSync(customPath("data/db.json"))) {
+    let db = JSON.parse(fs.readFileSync(customPath("data/db.json")));
+    console.log(
+      "Running recursive task every minute. users to report in case of node issues are: ",
+      db.report
+    );
+    if (db.report.length > 0) {
+      tasks.checkMonitoredNodesTask(
+        botSendMsgFunction,
+        db.report,
+        botCommands.checkMonitoredAndBlockProducersHeight
+      );
+    }
+  }
 
   setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
 }
-if (process.env.GROUP_ID === undefined) {
-  console.log("Chat ID not specified, bypassing recursive task");
-} else {
-  setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
-}
+setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
 
 // Catching uncaught exceptions
 //

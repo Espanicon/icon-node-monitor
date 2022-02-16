@@ -18,7 +18,7 @@ const INTERVALS = {
 };
 const MAX_ALLOWED_BLOCK_GAP = 100;
 const STATE_PATH = "data/state.json";
-const MONITOR_PATH = "data/monitor.json";
+const MONITOR_PATH = "data/db.json";
 const PREPS_PATH = "data/preps.json";
 
 function setAlarmState(data) {
@@ -69,7 +69,6 @@ async function checkMonitoredNodesTask(botContext, botId, makeCheck) {
     const monitored = JSON.parse(
       fs.readFileSync(customPath(MONITOR_PATH), "utf8")
     );
-    console.log(monitored);
     if (monitored.monitored.length > 0) {
       try {
         let firstState = null;
