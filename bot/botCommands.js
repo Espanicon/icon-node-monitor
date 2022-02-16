@@ -48,6 +48,8 @@ async function checkMonitoredAndBlockProducersHeight(
   };
 }
 
+function addMeToReport(userObj) {}
+
 function updatePrepsList() {
   syncGetPreps(customPath(PREPS_PATH));
 }
@@ -66,8 +68,11 @@ function showListOfPreps() {
   return preps;
 }
 
-module.exports.checkMonitoredAndBlockProducersHeight = checkMonitoredAndBlockProducersHeight;
-module.exports.checkMonitoredNodesHeight = checkMonitoredNodesHeight;
-module.exports.checkBlockProducersHeight = checkBlockProducersHeight;
-module.exports.updatePrepsList = updatePrepsList;
-module.exports.showListOfPreps = showListOfPreps;
+module.exports = {
+  checkMonitoredAndBlockProducersHeight: checkMonitoredAndBlockProducersHeight,
+  checkMonitoredNodesHeight: checkMonitoredNodesHeight,
+  checkBlockProducersHeight: checkBlockProducersHeight,
+  updatePrepsList: updatePrepsList,
+  showListOfPreps: showListOfPreps,
+  addMeToReport: addMeToReport
+};

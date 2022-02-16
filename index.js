@@ -30,7 +30,11 @@ try {
 function initializeSession(node = null) {
   let session = {
     hasInitialized: true,
-    monitored: []
+    monitored: [],
+    report: [],
+    general: {
+      admin: null
+    }
   };
   if (node !== null) {
     session.monitored.push(node);
@@ -128,6 +132,17 @@ espaniconBot.command("start", ctx => {
 // /info command
 espaniconBot.command("/info", ctx => {
   ctx.reply(STRINGS.infoCmdString);
+});
+// /addMeToReport command
+espaniconBot.command("/addMeToReport", ctx => {
+  //console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(ctx)));
+  ctx.session.report.push({ id: ctx.from.id, username: ctx.from.username });
+  ctx.reply(`User ${ctx.from.username} has been added to report list`);
+  botCommands.addMeToReport(ctx.from);
+});
+// /showListOfMonitored command
+espaniconBot.command("/showListOfMonitored", ctx => {
+  ctx.reply("Command /showListOfMonitored sent but is not yet implemented");
 });
 // /checkMonitoredAndBlockProducersHeight command
 espaniconBot.command("checkMonitoredAndBlockProducersHeight", async ctx => {
