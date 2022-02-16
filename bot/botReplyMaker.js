@@ -1,5 +1,8 @@
 // ./bot/botReplyMaker.js
 //
+const { model } = require("../model");
+
+const STRINGS = model.getStrings();
 
 function checkMonitoredNodesHeight() {}
 function checkBlockProducersHeight() {}
@@ -10,12 +13,18 @@ function checkMonitoredAndBlockProducersHeight() {}
  * param {{highestBlock: number, nodes [{gap: number, name: string, height:number}]}} data
  */
 function makeNodesHeightAndGapReply(data) {
-  let reply = `ICON Blockchain current block: ${data.highestBlock}\n\n`;
+  let reply = "";
+  if (data) {
+    /*
+     * if data is not null
+     */
+    reply += `ICON Blockchain current block: ${data.highestBlock}\n\n`;
 
-  for (let node of data.nodes) {
-    reply =
-      reply +
-      `Node name: ${node.name}\nHeight: ${node.height}\nBlock gap:${node.gap}\n\n`;
+    for (let node of data.nodes) {
+      reply += `Node name: ${node.name}\nHeight: ${node.height}\nBlock gap:${node.gap}\n\n`;
+    }
+  } else {
+    reply = STRINGS.msg2;
   }
   return reply;
 }

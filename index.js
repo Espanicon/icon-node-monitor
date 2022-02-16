@@ -3,28 +3,14 @@ require("dotenv").config();
 const { Telegraf, session, Markup, Scenes } = require("telegraf");
 const fs = require("fs");
 const { botCommands, botReplyMaker, customScenes } = require("./bot");
-const { syncGetPreps, customPath, tasks } = require("./services");
+const { customPath, tasks } = require("./services");
+const { model } = require("./model");
 
 // global constants
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const GROUP_ID = process.env.GROUP_ID;
-const STRINGS = JSON.parse(fs.readFileSync(customPath("data/strings.json")));
-let PREPS = [];
-try {
-  if (fs.existsSync(customPath("data/preps.json"))) {
-    // if the file 'data/preps.json' exists
-    PREPS = JSON.parse(fs.readFileSync(customPath("/data/preps.json")));
-  } else {
-    // if it doesnt exists, create it
-    syncGetPreps("./data/preps.json");
-    PREPS = JSON.parse(fs.readFileSync(customPath("/data/preps.json")));
-  }
-} catch (err) {
-  // if there is some error processing the 'data/preps.json' file
-  // this throw statement will kill the program because it will be
-  // an unhandle exception
-  throw "Error while processing 'data/preps.json' file";
-}
+const STRINGS = model.getStrings();
+const PREPS = model.getListOfPreps();
+const _DB_ = "data/db.json";
 
 // Functions
 
@@ -130,17 +116,9 @@ espaniconBot.command("/showListOfMonitored", ctx => {
 });
 // /checkMonitoredAndBlockProducersHeight command
 espaniconBot.command("checkMonitoredAndBlockProducersHeight", async ctx => {
-  if (ctx.session.hasInitialized === true) {
-    let data = await botCommands.checkMonitoredAndBlockProducersHeight(
-      PREPS.NODES_ARRAY,
-      ctx.session.monitored
-    );
-
-    let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
-    ctx.reply(reply);
-  } else {
-    ctx.reply(STRINGS.msg2);
-  }
+  const data = await botCommands.checkMonitoredAndBlockProducersHeight();
+  const reply = botReplyMaker.makeNodesHeightAndGapReply(data);
+  ctx.reply(reply);
 });
 // /updatePrepsList command
 espaniconBot.command("/updatePrepsList", ctx => {
@@ -156,27 +134,15 @@ espaniconBot.command("/showListOfPreps", ctx => {
 
 // /checkBlockProducersHeight command
 espaniconBot.command("checkBlockProducersHeight", async ctx => {
-  if (ctx.session.hasInitialized === true) {
-    let data = await botCommands.checkBlockProducersHeight(PREPS.NODES_ARRAY);
-
-    let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
-    ctx.reply(reply);
-  } else {
-    ctx.reply(STRINGS.msg2);
-  }
+  let data = await botCommands.checkBlockProducersHeight();
+  let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
+  ctx.reply(reply);
 });
 // /checkMonitoredHeight command
 espaniconBot.command("checkMonitoredNodesHeight", async ctx => {
-  if (ctx.session.hasInitialized === true) {
-    let data = await botCommands.checkMonitoredNodesHeight(
-      ctx.session.monitored
-    );
-
-    let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
-    ctx.reply(reply);
-  } else {
-    ctx.reply(STRINGS.msg2);
-  }
+  let data = await botCommands.checkMonitoredNodesHeight();
+  let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
+  ctx.reply(reply);
 });
 
 // Running the bot
@@ -191,8 +157,8 @@ function botSendMsgFunction(arrayOfUsersToReport, reply) {
 
 // Running recursive check with setTimeout
 function runEveryMinute() {
-  if (fs.existsSync(customPath("data/db.json"))) {
-    let db = JSON.parse(fs.readFileSync(customPath("data/db.json")));
+  if (fs.existsSync(customPath(_DB_))) {
+    let db = JSON.parse(fs.readFileSync(customPath(_DB_)));
     console.log(
       "Running recursive task every minute. users to report in case of node issues are: ",
       db.report
@@ -227,10 +193,7 @@ function isTelegramErrorType(error) {
 process.on("uncaughtException", err => {
   let killApp = true;
   if (isTelegramErrorType(err)) {
-    console.log(
-      "Unexpected error of type 'TelegramError'. Make sure the GROUP_ID value is valid in the '.env' file\n",
-      err
-    );
+    console.log("Unexpected error of type 'TelegramError'.", err);
     killApp = true;
   } else {
     console.log("uncaughtException : ", err);

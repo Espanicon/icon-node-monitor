@@ -1,9 +1,10 @@
 // model/model.js
 const fs = require("fs");
-const { customPath } = require("../services");
+const { customPath, syncGetPreps } = require("../services");
 
-const USERS_DB_PATH = "data/users.json";
 const _DB_ = "data/db.json";
+const _PREPS_ = "data/preps.json";
+const _STRINGS_ = "data/strings.json";
 
 // functions
 function dbInitState() {
@@ -19,6 +20,35 @@ function dbInitState() {
     admin: { id: null, username: null },
     state: { locked: false }
   };
+}
+function getStrings() {
+  let strings = null;
+
+  try {
+    strings = JSON.parse(fs.readFileSync(customPath(_STRINGS_)));
+    return strings;
+  } catch (err) {
+    console.log("Error while processing 'data/strings.json' file", err);
+    // this file is critical so if it doesnt exists throw an exception to kill app
+    throw "CRITICAL ERROR: there was an error while processing strings.json file";
+  }
+}
+function updatePrepsList() {
+  // rebuilds the preps.json file
+  syncGetPreps(customPath(_PREPS_));
+}
+
+function getListOfPreps() {
+  let preps = null;
+  try {
+    preps = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
+  } catch (err) {
+    console.log("Error while reading data/preps.json", err);
+    console.log("Creating new list of preps");
+    updatePrepsList();
+    preps = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
+  }
+  return preps;
 }
 
 function addBotAdmin(ctxFrom) {
@@ -125,5 +155,8 @@ module.exports = {
   writeDb: writeDb,
   updateDbMonitored: updateDbMonitored,
   addBotAdmin: addBotAdmin,
-  updateDbReport: updateDbReport
+  updateDbReport: updateDbReport,
+  getListOfPreps: getListOfPreps,
+  updatePrepsList: updatePrepsList,
+  getStrings: getStrings
 };

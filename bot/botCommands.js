@@ -1,41 +1,53 @@
 // bot commands
 //
-const {
-  getChainAndNodesHeight,
-  syncGetPreps,
-  customPath
-} = require("../services");
+const { getChainAndNodesHeight, customPath } = require("../services");
 const fs = require("fs");
 const { model } = require("../model");
 
-const PREPS_PATH = "data/preps.json";
+const _PREPS_ = "data/preps.json";
 
 /**
  * bot command '/checkMonitoredNodesHeight'
- * @param {Array.<{name: String, ip: String}>} monitorArray - Array of nodes to monitor.
  */
-async function checkMonitoredNodesHeight(monitoredArray) {
-  return await checkMonitoredAndBlockProducersHeight(monitoredArray, []);
+async function checkMonitoredNodesHeight() {
+  const monitored = model.readDb().monitored;
+  if (monitored.length > 0) {
+    // if there are no nodes added to the list of monitored we return a null value
+    const check = chainAndNodesCheck(monitored);
+    return check;
+  } else {
+    return null;
+  }
 }
 
 /**
  * bot command '/checkBlockProducersHeight'
- * @param {Array.<{name: String, ip: String}>} nodesArray
  */
-async function checkBlockProducersHeight(nodesArray) {
-  return await checkMonitoredAndBlockProducersHeight(nodesArray, []);
+async function checkBlockProducersHeight() {
+  const preps = model.getListOfPreps().NODES_ARRAY;
+  const check = chainAndNodesCheck(preps);
+  return check;
 }
 
 /**
  * bot command '/checkMonitoredAndBlockProducersHeight'
- * @param {Array.<{name: String, ip: String}>} nodesArray
- * @param {Array.<{name: String, ip: String}>} monitorArray - Array of nodes to monitor.
  */
-async function checkMonitoredAndBlockProducersHeight(
-  nodesArray,
-  monitoredArray
-) {
-  const data = await getChainAndNodesHeight(nodesArray, monitoredArray);
+async function checkMonitoredAndBlockProducersHeight() {
+  const preps = model.getListOfPreps().NODES_ARRAY;
+  const monitored = model.readDb().monitored;
+  if (monitored.length > 0) {
+    // if there are no nodes added to the list of monitored we return a null value
+    const check = chainAndNodesCheck(preps, monitored);
+    return check;
+  } else {
+    return null;
+  }
+}
+async function chainAndNodesCheck(firstArrayOfNodes, secondArrayOfNodes = []) {
+  const data = await getChainAndNodesHeight(
+    firstArrayOfNodes,
+    secondArrayOfNodes
+  );
   let nodesWithGap = [];
   for (let node of data.monitored.concat(data.nodes)) {
     nodesWithGap.push({
@@ -54,21 +66,11 @@ function addMeToReport(ctxFrom) {
 }
 
 function updatePrepsList() {
-  syncGetPreps(customPath(PREPS_PATH));
+  model.updatePrepsList();
 }
 
 function showListOfPreps() {
-  let preps = null;
-  try {
-    preps = JSON.parse(fs.readFileSync(customPath(PREPS_PATH)));
-  } catch (err) {
-    console.log("error while reading data/preps.json");
-    console.log(err);
-    console.log("creating new list of Preps");
-    updatePrepsList();
-    preps = JSON.parse(fs.readFileSync(customPath(PREPS_PATH)));
-  }
-  return preps;
+  return model.getListOfPreps();
 }
 
 module.exports = {
