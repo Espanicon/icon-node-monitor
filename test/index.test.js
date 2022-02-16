@@ -3,18 +3,14 @@
 require("dotenv").config();
 const { botCommands, botReplyMaker } = require("../bot");
 const { customPath, tasks } = require("../services");
+const { model } = require("../model");
 const fs = require("fs");
 
-const NODES = JSON.parse(fs.readFileSync(customPath("/data/preps.json")));
-const PREPS = NODES.NODES_ARRAY;
+const PREPS = model.getListOfPreps().NODES_ARRAY;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const GROUP_ID = process.env.GROUP_ID;
-
-let MONITORED = [];
-if (fs.existsSync(customPath("data/monitor.json"))) {
-  MONITORED = JSON.parse(fs.readFileSync(customPath("data/monitor.json")))
-    .monitored;
-}
+const MONITORED = model.readDb().monitored;
+const _DB_ = "data/db.json";
 
 class Bot {
   constructor(preps, monitored) {
@@ -22,35 +18,46 @@ class Bot {
     this.monitored = monitored;
   }
   async checkMonitoredAndBlockProducersHeight() {
-    let data = await botCommands.checkMonitoredAndBlockProducersHeight(
-      this.preps,
-      this.monitored
-    );
+    let data = await botCommands.checkMonitoredAndBlockProducersHeight();
     let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
     return reply;
   }
   async checkBlockProducersHeight() {
-    let data = await botCommands.checkBlockProducersHeight(this.preps);
+    let data = await botCommands.checkBlockProducersHeight();
     let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
     return reply;
   }
   async checkMonitoredNodesHeight() {
-    let data = await botCommands.checkMonitoredNodesHeight(this.monitored);
+    let data = await botCommands.checkMonitoredNodesHeight();
     let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
     return reply;
   }
 }
 
-function botSendMsgFunction(groupId, reply) {
-  console.log(reply);
+function botSendMsgFunction(arrayOfUsersToReport, reply) {
+  for (let eachUserToReport of arrayOfUsersToReport) {
+    console.log(
+      `Sending message to user @${eachUserToReport.username}\n`,
+      reply
+    );
+  }
 }
 
 function runEveryMinute() {
-  tasks.checkMonitoredNodesTask(
-    botSendMsgFunction,
-    GROUP_ID,
-    botCommands.checkMonitoredAndBlockProducersHeight
-  );
+  if (fs.existsSync(customPath(_DB_))) {
+    let db = JSON.parse(fs.readFileSync(customPath(_DB_)));
+    console.log(
+      "Running recursive task every minute. Users to report in case of node issues are: ",
+      db.report
+    );
+    if (db.report.length > 0) {
+      tasks.checkMonitoredNodesTask(
+        botSendMsgFunction,
+        db.report,
+        botCommands.checkMonitoredAndBlockProducersHeight
+      );
+    }
+  }
 
   setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
 }

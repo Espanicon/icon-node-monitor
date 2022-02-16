@@ -1,18 +1,14 @@
 // imports
 const { Scenes } = require("telegraf");
-const { customPath } = require("../services");
+const { customPath, lib } = require("../services");
 const { model } = require("../model");
+
 const fs = require("fs");
 
-const STRINGS = JSON.parse(fs.readFileSync(customPath("data/strings.json")));
+const STRINGS = model.getStrings();
 
 // Functions
 
-function validateIp(ip) {
-  let regex = new RegExp("^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(.|$)){4}$");
-
-  return regex.test(ip);
-}
 // Bot wizard scene
 const addNodeWizard = new Scenes.WizardScene(
   STRINGS.actions.add.label,
@@ -36,7 +32,7 @@ const addNodeWizard = new Scenes.WizardScene(
   async ctx => {
     // Wizard step 3
 
-    if (!validateIp(ctx.message.text)) {
+    if (!lib.validateIp(ctx.message.text)) {
       ctx.reply("Please enter valid IP address");
       return;
     }

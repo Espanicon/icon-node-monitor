@@ -4,8 +4,6 @@ const { getChainAndNodesHeight, customPath } = require("../services");
 const fs = require("fs");
 const { model } = require("../model");
 
-const _PREPS_ = "data/preps.json";
-
 /**
  * bot command '/checkMonitoredNodesHeight'
  */

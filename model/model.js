@@ -50,7 +50,12 @@ function getListOfPreps() {
   }
   return preps;
 }
-
+function prepsFileExists() {
+  return fs.existsSync(customPath(_PREPS_));
+}
+function monitoredNodesExists() {
+  return readDb().monitored.length > 0 ? true : false;
+}
 function addBotAdmin(ctxFrom) {
   let db = readDb();
   if (db.state.locked === false) {
@@ -158,5 +163,7 @@ module.exports = {
   updateDbReport: updateDbReport,
   getListOfPreps: getListOfPreps,
   updatePrepsList: updatePrepsList,
-  getStrings: getStrings
+  getStrings: getStrings,
+  prepsFileExists: prepsFileExists,
+  monitoredNodesExists: monitoredNodesExists
 };

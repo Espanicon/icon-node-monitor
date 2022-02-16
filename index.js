@@ -85,7 +85,7 @@ espaniconBot.action(STRINGS.actions.check_task.tag, (ctx, next) => {
 espaniconBot.action(STRINGS.actions.edit_task.tag, (ctx, next) => {
   ctx.scene.enter(STRINGS.actions.edit_task.label);
 });
-// END NODES BUTTON STRUCTURE
+// END REPORT BUTTON STRUCTURE
 
 // bot commands
 // start command
@@ -109,6 +109,10 @@ espaniconBot.command("/info", ctx => {
 espaniconBot.command("/addMeToReport", ctx => {
   let reply = botCommands.addMeToReport(ctx.from);
   ctx.reply(reply);
+});
+// /addGroupToReport Command
+espaniconBot.command("/addGroupToReport", ctx => {
+  ctx.reply("Command /addGroupToReport sent but is not yet implemeted");
 });
 // /showListOfMonitored command
 espaniconBot.command("/showListOfMonitored", ctx => {

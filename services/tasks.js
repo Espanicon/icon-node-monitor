@@ -2,8 +2,17 @@
 //
 const fs = require("fs");
 const { customPath } = require("../services");
-const STRINGS = JSON.parse(fs.readFileSync(customPath("data/strings.json")));
+const { model } = require("../model");
 
+// Global constants
+const STRINGS = model.getStrings();
+const PREPS = model.getListOfPreps();
+const MAX_ALLOWED_BLOCK_GAP = 100;
+
+// TODO: the entire logic of accessing the state should be moved to models.js
+const STATE_PATH = "data/state.json";
+
+// Functions
 function getBlankState() {
   return {
     highestBlock: 0,
@@ -16,10 +25,6 @@ const INTERVALS = {
   oneMinute: 60000,
   tenMinutes: 600000
 };
-const MAX_ALLOWED_BLOCK_GAP = 100;
-const STATE_PATH = "data/state.json";
-const MONITOR_PATH = "data/db.json";
-const PREPS_PATH = "data/preps.json";
 
 function setAlarmState(data) {
   let result = data;
@@ -61,65 +66,61 @@ function create10MinutesTaskReply(firstState, secondState) {
 }
 
 async function checkMonitoredNodesTask(botContext, botId, makeCheck) {
-  let nodesFileExists = fs.existsSync(customPath(PREPS_PATH));
-  let monitorFileExists = fs.existsSync(customPath(MONITOR_PATH));
+  let nodesFileExists = model.prepsFileExists();
+  let monitoredNodesExists = model.monitoredNodesExists();
 
-  if (nodesFileExists && monitorFileExists) {
-    const nodes = JSON.parse(fs.readFileSync(customPath(PREPS_PATH), "utf8"));
-    const monitored = JSON.parse(
-      fs.readFileSync(customPath(MONITOR_PATH), "utf8")
-    );
-    if (monitored.monitored.length > 0) {
-      try {
-        let firstState = null;
-        let secondState = getBlankState();
-        if (fs.existsSync(customPath(STATE_PATH))) {
-          firstState = JSON.parse(
-            fs.readFileSync(customPath(STATE_PATH), "utf8")
-          );
-        } else {
-          // do nothin
-          firstState = getBlankState();
-        }
-        const data = await makeCheck(nodes.NODES_ARRAY, monitored.monitored);
-        for (let eachNode of data.nodes) {
-          for (let eachMonitor of monitored.monitored) {
-            if (eachMonitor.name === eachNode.name) {
-              secondState.nodes.push(eachNode);
-              secondState.highestBlock = data.highestBlock;
-            }
-          }
-        }
-        // assign states and save last state on file
-        secondState = setAlarmState(secondState);
-        fs.writeFileSync(
-          customPath("data/state.json"),
-          JSON.stringify(secondState)
+  if (nodesFileExists && monitoredNodesExists) {
+    const nodes = PREPS;
+    const monitored = model.readDb().monitored;
+    try {
+      let firstState = null;
+      let secondState = getBlankState();
+      if (fs.existsSync(customPath(STATE_PATH))) {
+        firstState = JSON.parse(
+          fs.readFileSync(customPath(STATE_PATH), "utf8")
         );
-        let reply = create10MinutesTaskReply(firstState, secondState);
-        if (reply === false) {
-          if (fs.existsSync(customPath(STATE_PATH))) {
-            fs.unlinkSync(customPath(STATE_PATH));
-          }
-          console.log("nodes ok\n\n");
-        } else {
-          fs.writeFileSync(STATE_PATH, JSON.stringify(secondState));
-          botContext(botId, reply);
-        }
-      } catch (err) {
-        console.log("error running task");
-        console.log(err);
+      } else {
+        // do nothin
+        firstState = getBlankState();
       }
-    } else {
-      console.log("No nodes have been added to monitor, bypassing cron check");
+      const data = await makeCheck(nodes.NODES_ARRAY, monitored);
+      for (let eachNode of data.nodes) {
+        for (let eachMonitor of monitored) {
+          if (eachMonitor.name === eachNode.name) {
+            secondState.nodes.push(eachNode);
+            secondState.highestBlock = data.highestBlock;
+          }
+        }
+      }
+      // assign states and save last state on file
+      secondState = setAlarmState(secondState);
+      fs.writeFileSync(
+        customPath("data/state.json"),
+        JSON.stringify(secondState)
+      );
+      let reply = create10MinutesTaskReply(firstState, secondState);
+      if (reply === false) {
+        if (fs.existsSync(customPath(STATE_PATH))) {
+          fs.unlinkSync(customPath(STATE_PATH));
+        }
+        console.log("nodes ok\n\n");
+      } else {
+        fs.writeFileSync(STATE_PATH, JSON.stringify(secondState));
+        botContext(botId, reply);
+      }
+    } catch (err) {
+      console.log("error running task");
+      console.log(err);
     }
   } else {
-    // Monitor and Preps files dont exists so we dont run the check
+    // no node has been added to list of monitored nodes
     console.log(
-      "monitor.json and preps.json file havent been created, bypassing cron check"
+      "No nodes have been added to monitored list, bypassing recursive task"
     );
   }
 }
 
-exports.checkMonitoredNodesTask = checkMonitoredNodesTask;
-exports.INTERVALS = INTERVALS;
+module.exports = {
+  checkMonitoredNodesTask: checkMonitoredNodesTask,
+  INTERVALS: INTERVALS
+};
