@@ -99,6 +99,6 @@ if (require.main === module) {
 } else {
   // If its a module
   //
-  console.info("Running app as module");
+  console.info("syncGetPreps.js imported as a module");
   module.exports = asyncRun;
 }

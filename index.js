@@ -9,7 +9,6 @@ const { model } = require("./model");
 // global constants
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const STRINGS = model.getStrings();
-const PREPS = model.getListOfPreps();
 const _DB_ = "data/db.json";
 
 // Functions

@@ -1,6 +1,8 @@
 // model/model.js
 const fs = require("fs");
-const { customPath, syncGetPreps } = require("../services");
+const customPath = require("../services/customPath.js");
+const syncGetPreps = require("../services/syncGetPreps.js");
+const lib = require("../services/lib.js");
 
 const _DB_ = "data/db.json";
 const _PREPS_ = "data/preps.json";
@@ -23,7 +25,6 @@ function dbInitState() {
 }
 function getStrings() {
   let strings = null;
-
   try {
     strings = JSON.parse(fs.readFileSync(customPath(_STRINGS_)));
     return strings;
@@ -33,6 +34,7 @@ function getStrings() {
     throw "CRITICAL ERROR: there was an error while processing strings.json file";
   }
 }
+
 function updatePrepsList() {
   // rebuilds the preps.json file
   syncGetPreps(customPath(_PREPS_));
@@ -84,10 +86,54 @@ function readDb() {
 function writeDb(data) {
   fs.writeFileSync(customPath(_DB_), JSON.stringify(data));
 }
+/*
+ * Remove one or more users from the report list in the database
+ * @param {string} validatedStringOfUsers
+ */
+function removeUsersFromDbReport(validStringOfUsers) {
+  let parsedListOfUsers = lib.parseUserList(validStringOfUsers);
+  console.log(
+    `Removing the following users from the database: ${parsedListOfUsers}`
+  );
+  let newListOfUsers = [];
+  let deletedUsers = [];
+  let db = readDb();
+  for (let eachUser of db.report) {
+    if (parsedListOfUsers.includes(eachUser.username)) {
+      // the user exists inside the database.
+      deletedUsers.push(eachUser);
+    } else {
+      newListOfUsers.push(eachUser);
+    }
+  }
+  db.report = newListOfUsers;
+  writeDb(db);
+  console.log(
+    `Users successfully removed from list, updated list contains the following users: ${db.report}`
+  );
+
+  // database has been updated now create reply to pass to the bot
+  let reply = "";
+  if (deletedUsers.length > 0) {
+    reply =
+      "The following users were successfully removed from the report list:\n\n";
+    for (let eachDeletedUser of deletedUsers) {
+      reply += `Username: ${eachDeletedUser.username}\n`;
+    }
+  } else {
+    reply =
+      "None of the users you entered were found in the report list, here is a list of the users currently in the list:\n\n";
+    for (let eachUser of db.report) {
+      reply += `Username: ${eachUser.username}\n`;
+    }
+  }
+  return reply;
+}
+/*
+ * updates the report list in the database
+ * @param {{username: string, id: number}} data
+ */
 function updateDbReport(data) {
-  /*
-   * data: [{username: string, id: number}]
-   */
   let db = readDb();
   for (let eachUser of db.report) {
     if (eachUser.id === data.id) {
@@ -165,5 +211,6 @@ module.exports = {
   updatePrepsList: updatePrepsList,
   getStrings: getStrings,
   prepsFileExists: prepsFileExists,
-  monitoredNodesExists: monitoredNodesExists
+  monitoredNodesExists: monitoredNodesExists,
+  removeUsersFromDbReport: removeUsersFromDbReport
 };
