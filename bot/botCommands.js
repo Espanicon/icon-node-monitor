@@ -96,8 +96,23 @@ function showListOfMonitored(db) {
 
   return reply;
 }
+function testReport(db) {
+  let reply = "Test message from Icon-node-monitor";
+  return reply;
+}
 function addMeToReport(ctxFrom) {
   return model.updateDbReport(ctxFrom);
+}
+function addGroupToReport(ctxChat, ctxFrom) {
+  let groupData = { id: ctxChat.id, username: ctxChat.title };
+  let reply = "";
+  let db = model.readDbAndCheckForAdmin(ctxFrom);
+  if (ctxFrom.id != db.admin.id && db.state.locked === true) {
+    reply += `The bot is locked, only the bot admin (@${db.admin.username}) can add this group to the report list.`;
+  } else {
+    reply += model.updateDbReport(groupData);
+  }
+  return reply;
 }
 
 function updatePrepsList() {
@@ -117,5 +132,7 @@ module.exports = {
   addMeToReport: addMeToReport,
   lock: lock,
   unlock: unlock,
-  showListOfMonitored: showListOfMonitored
+  showListOfMonitored: showListOfMonitored,
+  testReport: testReport,
+  addGroupToReport: addGroupToReport
 };

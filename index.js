@@ -16,7 +16,6 @@ if (!BOT_TOKEN || BOT_TOKEN == null) {
 }
 
 // Functions
-
 // creating new Bot instance
 const iconNodeMonitorBot = new Telegraf(BOT_TOKEN);
 const stage = new Scenes.Stage([
@@ -121,6 +120,12 @@ iconNodeMonitorBot.command("/addMeToReport", ctx => {
   let reply = botCommands.addMeToReport(ctx.from);
   ctx.reply(reply);
 });
+// /addGroupToReport Command
+iconNodeMonitorBot.command("/addGroupToReport", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let reply = botCommands.addGroupToReport(ctx.chat, ctx.from);
+  ctx.reply(reply);
+});
 // /unlock command
 iconNodeMonitorBot.command("/unlock", ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
@@ -133,14 +138,15 @@ iconNodeMonitorBot.command("/lock", ctx => {
   let reply = botCommands.lock(ctx.from);
   ctx.reply(reply);
 });
-// /addGroupToReport Command
-// TODO
-iconNodeMonitorBot.command("/addGroupToReport", ctx => {
+// /testReport command
+iconNodeMonitorBot.command("/testReport", ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
-  ctx.reply("Command /addGroupToReport sent but is not yet implemeted");
+  let reply = botCommands.testReport(db);
+  for (let eachUser of db.report) {
+    ctx.telegram.sendMessage(eachUser.id, reply);
+  }
 });
-// /showListOfMonitored command
-// TODO: Maybe an unnecesary command?
+// /showListOfMonitored command. maybe an unnecesary command?
 iconNodeMonitorBot.command("/showListOfMonitored", ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   let reply = botCommands.showListOfMonitored(db);
@@ -226,6 +232,7 @@ function botSendMsgFunction(arrayOfUsersToReport, reply) {
     iconNodeMonitorBot.telegram.sendMessage(eachUserToReport.id, reply);
   }
 }
+
 // TODO: implement recursive check every hour for goloop version
 // Running recursive block check every minute
 function runEveryMinute() {

@@ -150,10 +150,12 @@ function updateDbReport(data) {
       return "User is already added to the report list";
     }
   }
+
   db.report.push({ username: data.username, id: data.id });
   writeDb(db);
   return "User added to report list";
 }
+
 function updateDbMonitored(data, typeOfUpdate) {
   /*
    * data: [{name: string, ip: number}]

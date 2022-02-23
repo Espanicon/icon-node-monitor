@@ -141,7 +141,7 @@ const addTaskWizard = new Scenes.WizardScene(
       return ctx.scene.leave();
     }
     ctx.reply(
-      "Because of limitations with how Telegram bots work, to add a user to the list of entities that will get node status report, is necessary to send the command '/addMeToReport' via private chat to the bot or by the bot admin in a chat group."
+      "Because of limitations with how Telegram bots work, to add a user to the list of entities that will get node status report, is necessary to send the command '/addMeToReport' via private chat to the bot or by the bot admin in a chat group using '/addGroupToReport'."
     );
     return ctx.scene.leave();
   }
