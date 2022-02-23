@@ -73,6 +73,16 @@ function addBotAdmin(ctxFrom) {
   }
 }
 
+function readDbAndCheckForAdmin(currentUser) {
+  db = readDb();
+  if (db.admin.id == null || db.admin.username == null) {
+    // if bot admin havent been set
+    addBotAdmin(currentUser);
+  }
+  // return new read on db to account for an update on admin status
+  return readDb();
+}
+
 function readDb() {
   if (fs.existsSync(customPath(_DB_))) {
     return JSON.parse(fs.readFileSync(customPath(_DB_)));
@@ -201,6 +211,17 @@ function updateDbMonitored(data, typeOfUpdate) {
   return result;
 }
 
+function lock() {
+  let db = readDb();
+  db.state.locked = true;
+  writeDb(db);
+}
+function unlock() {
+  let db = readDb();
+  db.state.locked = false;
+  writeDb(db);
+}
+
 module.exports = {
   readDb: readDb,
   writeDb: writeDb,
@@ -212,5 +233,8 @@ module.exports = {
   getStrings: getStrings,
   prepsFileExists: prepsFileExists,
   monitoredNodesExists: monitoredNodesExists,
-  removeUsersFromDbReport: removeUsersFromDbReport
+  removeUsersFromDbReport: removeUsersFromDbReport,
+  readDbAndCheckForAdmin: readDbAndCheckForAdmin,
+  lock: lock,
+  unlock: unlock
 };

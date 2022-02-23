@@ -58,7 +58,36 @@ async function chainAndNodesCheck(firstArrayOfNodes, secondArrayOfNodes = []) {
     nodes: nodesWithGap
   };
 }
-
+/**
+ * bot command '/unlock'
+ */
+function unlock(currentUser) {
+  let reply = "";
+  let db = model.readDbAndCheckForAdmin(currentUser);
+  if (currentUser.id != db.admin.id && db.state.locked === true) {
+    reply += "The bot is currently locked and only the bot admin can unlock it";
+  } else {
+    model.unlock();
+    reply +=
+      "Bot unlocked, every user can now add/remove nodes and users from the report list";
+  }
+  return reply;
+}
+/**
+ * bot command '/lock'
+ */
+function lock(currentUser) {
+  let reply = "";
+  let db = model.readDbAndCheckForAdmin(currentUser);
+  if (currentUser.id != db.admin.id && db.state.locked === true) {
+    reply += "The bot is already locked";
+  } else {
+    model.lock();
+    reply +=
+      "Bot locked, only the bot admin can now add/remove nodes and users from the report list";
+  }
+  return reply;
+}
 function addMeToReport(ctxFrom) {
   return model.updateDbReport(ctxFrom);
 }
@@ -77,5 +106,7 @@ module.exports = {
   checkBlockProducersHeight: checkBlockProducersHeight,
   updatePrepsList: updatePrepsList,
   showListOfPreps: showListOfPreps,
-  addMeToReport: addMeToReport
+  addMeToReport: addMeToReport,
+  lock: lock,
+  unlock: unlock
 };

@@ -1,18 +1,15 @@
 // test/services/lib.test.js
 const { lib } = require("../../services");
+const utils = require("../utils.js");
 
-const COLORS = {
-  red: "\033[31m ",
-  green: "\x1b[32m ",
-  reset: "\x1b[0m "
-};
+const COLORS = utils.colors;
 
-const tests = {
+const TESTS = {
   validateIp: [
     { value: "eacoeg", result: false },
-    { value: "102.233.332.233", result: true },
+    { value: "102.233.332.233", result: false },
     { value: "https://localhost", result: false },
-    { value: "0.0.0.0", result: false },
+    { value: "0.0.0.0", result: true },
     { value: "999.999.999.", result: false }
   ],
   validateUserList: [
@@ -26,12 +23,11 @@ const tests = {
     { value: "wesoqsq weoscedo,", result: false }
   ]
 };
+function testTemplate(title, tests, testCallback) {
+  let result = title;
 
-function runTestOnValidateUserList() {
-  let result = "Result of tests run on validateUserList() function\n\n";
-
-  for (let eachTest of tests.validateUserList) {
-    let resultOfTestBool = lib.validateUserList(eachTest.value);
+  for (let eachTest of tests) {
+    let resultOfTestBool = testCallback(eachTest.value);
     let resultOfTestString =
       resultOfTestBool === eachTest.result
         ? `${COLORS.green}PASSED`
@@ -42,4 +38,14 @@ function runTestOnValidateUserList() {
   console.log(result);
 }
 
+function runTestOnValidateIp() {
+  let title = "\nResult of tests run on validateIp() function\n\n";
+  testTemplate(title, TESTS.validateIp, lib.validateIp);
+}
+function runTestOnValidateUserList() {
+  let title = "\nResult of tests run on validateUserList() function\n\n";
+  testTemplate(title, TESTS.validateUserList, lib.validateUserList);
+}
+
 runTestOnValidateUserList();
+runTestOnValidateIp();

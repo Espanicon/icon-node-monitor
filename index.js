@@ -11,6 +11,10 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const STRINGS = model.getStrings();
 const _DB_ = "data/db.json";
 
+if (!BOT_TOKEN || BOT_TOKEN == null) {
+  throw "Critical error, there is no bot auth token on '.env' file.";
+}
+
 // Functions
 
 // creating new Bot instance
@@ -87,9 +91,15 @@ espaniconBot.action(STRINGS.actions.edit_task.tag, (ctx, next) => {
 // END REPORT BUTTON STRUCTURE
 
 // bot commands
+// /test command
+espaniconBot.command("/test", async ctx => {
+  let commands = await ctx.telegram.botCommandsScopeChat;
+  console.log(commands);
+});
 // start command
 espaniconBot.command("start", ctx => {
-  ctx.reply(
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  ctx.replyWithMarkdownV2(
     STRINGS.msg1,
     Markup.inlineKeyboard([
       Markup.button.callback(
@@ -102,34 +112,53 @@ espaniconBot.command("start", ctx => {
 });
 // /info command
 espaniconBot.command("/info", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   ctx.reply(STRINGS.infoCmdString);
 });
 // /addMeToReport command
 espaniconBot.command("/addMeToReport", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   let reply = botCommands.addMeToReport(ctx.from);
+  ctx.reply(reply);
+});
+// /unlock command
+espaniconBot.command("/unlock", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let reply = botCommands.unlock(ctx.from);
+  ctx.reply(reply);
+});
+// /lock command
+espaniconBot.command("/lock", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let reply = botCommands.lock(ctx.from);
   ctx.reply(reply);
 });
 // /addGroupToReport Command
 espaniconBot.command("/addGroupToReport", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   ctx.reply("Command /addGroupToReport sent but is not yet implemeted");
 });
 // /showListOfMonitored command
 espaniconBot.command("/showListOfMonitored", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   ctx.reply("Command /showListOfMonitored sent but is not yet implemented");
 });
 // /checkMonitoredAndBlockProducersHeight command
 espaniconBot.command("checkMonitoredAndBlockProducersHeight", async ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   const data = await botCommands.checkMonitoredAndBlockProducersHeight();
   const reply = botReplyMaker.makeNodesHeightAndGapReply(data);
   ctx.reply(reply);
 });
 // /updatePrepsList command
 espaniconBot.command("/updatePrepsList", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   botCommands.updatePrepsList();
   ctx.reply("List of Preps was updated");
 });
 // /showListOfPreps command
 espaniconBot.command("/showListOfPreps", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   let data = botCommands.showListOfPreps();
   let reply = botReplyMaker.makeUpdateListOfPrepsReply(data);
   ctx.reply(reply);
@@ -137,12 +166,14 @@ espaniconBot.command("/showListOfPreps", ctx => {
 
 // /checkBlockProducersHeight command
 espaniconBot.command("checkBlockProducersHeight", async ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   let data = await botCommands.checkBlockProducersHeight();
   let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
   ctx.reply(reply);
 });
 // /checkMonitoredHeight command
 espaniconBot.command("checkMonitoredNodesHeight", async ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   let data = await botCommands.checkMonitoredNodesHeight();
   let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
   ctx.reply(reply);
@@ -162,16 +193,18 @@ function botSendMsgFunction(arrayOfUsersToReport, reply) {
 function runEveryMinute() {
   if (fs.existsSync(customPath(_DB_))) {
     let db = JSON.parse(fs.readFileSync(customPath(_DB_)));
-    console.log(
-      "Running recursive task every minute. users to report in case of node issues are: ",
-      db.report
-    );
     if (db.report.length > 0) {
+      console.log(
+        "Running recursive task every minute. users to report in case of node issues are: ",
+        db.report
+      );
       tasks.checkMonitoredNodesTask(
         botSendMsgFunction,
         db.report,
         botCommands.checkMonitoredAndBlockProducersHeight
       );
+    } else {
+      console.log("No users added to report list, skipping recursive check");
     }
   }
 

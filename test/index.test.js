@@ -1,16 +1,21 @@
-// script.js
+// /test/index.test.js
 //
 require("dotenv").config();
-const { botCommands, botReplyMaker } = require("../bot");
+const { botCommands, botReplyMaker, customScenes } = require("../bot");
 const { customPath, tasks } = require("../services");
 const { model } = require("../model");
 const fs = require("fs");
 
 const PREPS = model.getListOfPreps().NODES_ARRAY;
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const GROUP_ID = process.env.GROUP_ID;
 const MONITORED = model.readDb().monitored;
 const _DB_ = "data/db.json";
+const MOCK = {
+  users: [{ username: "Espanicon_Prep", id: 1179874 }],
+  monitored: [{ name: "Espanicon", ip: "65.108.47.72" }],
+  admin: { username: "Espanicon_Prep", id: 1179874 },
+  state: { locked: true }
+};
 
 class Bot {
   constructor(preps, monitored) {
@@ -32,6 +37,47 @@ class Bot {
     let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
     return reply;
   }
+  addMeToReport() {
+    let reply = botCommands.addMeToReport(MOCK.users[0]);
+    return reply;
+  }
+  addGroupToReport() {
+    let reply = "Command /addGroupToReport not yet implemented";
+    return reply;
+  }
+  showListOfMonitored() {
+    let reply = "Command /showListOfMonitored not yet implemented";
+  }
+  addNode() {
+    let db = customScenes.readDbAndCheckForAdmin(MOCK.users[0]);
+    let reply = model.updateDbMonitored(MOCK.monitored[0], "ADD");
+    return reply;
+  }
+  checkNode() {
+    let db = customScenes.readDbAndCheckForAdmin(MOCK.monitored[0]);
+    return db.monitored;
+  }
+  editNode() {
+    let db = customScenes.readDbAndCheckForAdmin(MOCK.monitored[0]);
+    let reply = model.updateDbMonitored(MOCK.monitored[0], "DELETE");
+    return reply;
+  }
+  addTask() {
+    let db = customScenes.readDbAndCheckForAdmin(MOCK.users[0]);
+    this.addMeToReport(MOCK.users[0]);
+    let reply = model.readDb();
+    return reply;
+  }
+  checkTask() {
+    let db = customScenes.readDbAndCheckForAdmin(MOCK.users[0]);
+    let reply = db.report;
+    return reply;
+  }
+  editTask() {
+    let db = customScenes.readDbAndCheckForAdmin(MOCK.users[0]);
+    let reply = model.removeUsersFromDbReport("Espanicon_Prep");
+    return reply;
+  }
 }
 
 function botSendMsgFunction(arrayOfUsersToReport, reply) {
@@ -46,16 +92,18 @@ function botSendMsgFunction(arrayOfUsersToReport, reply) {
 function runEveryMinute() {
   if (fs.existsSync(customPath(_DB_))) {
     let db = JSON.parse(fs.readFileSync(customPath(_DB_)));
-    console.log(
-      "Running recursive task every minute. Users to report in case of node issues are: ",
-      db.report
-    );
     if (db.report.length > 0) {
+      console.log(
+        "Running recursive task every minute. Users to report in case of node issues are: ",
+        db.report
+      );
       tasks.checkMonitoredNodesTask(
         botSendMsgFunction,
         db.report,
         botCommands.checkMonitoredAndBlockProducersHeight
       );
+    } else {
+      console.log("No users added to report list, skipping recursive check");
     }
   }
 
@@ -64,6 +112,7 @@ function runEveryMinute() {
 
 (async () => {
   let newBot = new Bot(PREPS, MONITORED);
+  let breakLine = "\n-----------\n";
 
   // test command /checkMonitoredAndBlockProducersHeight
   // let command1 = await newBot.checkMonitoredAndBlockProducersHeight();
@@ -79,6 +128,36 @@ function runEveryMinute() {
   // let command3 = await newBot.checkMonitoredNodesHeight();
   // console.log("testing command /checkMonitoredNodesHeight");
   // console.log(command3);
+
+  // test command 'add node'
+  console.log('\nRunning test "add node"\n');
+  let result4 = newBot.addNode();
+  console.log(result4, breakLine);
+
+  // test command 'check node'
+  console.log('\nRunning test "check node"\n');
+  let result5 = newBot.checkNode();
+  console.log(result5, breakLine);
+
+  // test command 'edit node'
+  console.log('\nRunning test "edit node"\n');
+  let result6 = newBot.editNode();
+  console.log(result6, breakLine);
+
+  // test command 'add task'
+  console.log('\nRunning test "add task"\n');
+  let result7 = newBot.addTask();
+  console.log(result7, breakLine);
+
+  // test command 'check task'
+  console.log('\nRunning test "check task"\n');
+  let result8 = newBot.checkTask();
+  console.log(result8, breakLine);
+
+  // test command 'edit task'
+  console.log('\nRunning test "edit task"\n');
+  let result9 = newBot.editTask();
+  console.log(result9, breakLine);
 
   setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
 })();

@@ -15,24 +15,22 @@ function addEachUserToReply(msg, listOfUsers) {
   }
   return reply;
 }
-function readDbAndCheckForAdmin(currentUser) {
-  // read db
-  db = model.readDb();
-  if (db.admin.id == null || db.admin.username == null) {
-    // if bot admin havent been set
-    model.addBotAdmin(currentUser);
-  }
-  // return new read on db to account for an update on admin status
-  return model.readDb();
-}
 
 // Bot wizard scene
 const addNodeWizard = new Scenes.WizardScene(
   STRINGS.actions.add.label,
   ctx => {
     // Wizard step 1
-    ctx.session.db = readDbAndCheckForAdmin(ctx.from);
-    // TODO: place here logic that only admin can add nodes
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    if (
+      ctx.from.id != ctx.session.db.admin.id &&
+      ctx.session.db.state.locked === true
+    ) {
+      ctx.reply(
+        "Bot is currently locked and only the bot admin is allowed to add or remove nodes from the monitored list."
+      );
+      return ctx.scene.leave();
+    }
     ctx.reply("enter a name for the node you want to monitor");
     ctx.wizard.state.data = {};
     return ctx.wizard.next();
@@ -68,9 +66,9 @@ const editNodesWizard = new Scenes.WizardScene(
   ctx => {
     // Wizard step 1
     // Load db
-    ctx.session.db = readDbAndCheckForAdmin(ctx.from);
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
     if (
-      ctx.session.db.locked === true &&
+      ctx.session.db.state.locked === true &&
       ctx.from.id != ctx.session.db.admin.id
     ) {
       // Bot admin is the only one that can delete nodes from monitoring
@@ -116,7 +114,7 @@ const checkNodesWizard = new Scenes.WizardScene(
   STRINGS.actions.check.label,
   ctx => {
     // Wizard step 1
-    ctx.session.db = readDbAndCheckForAdmin(ctx.from);
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
     if (ctx.session.db.monitored.length > 0) {
       let reply = "Nodes being monitored:\n\n";
       for (let node of ctx.session.db.monitored) {
@@ -132,7 +130,16 @@ const checkNodesWizard = new Scenes.WizardScene(
 const addTaskWizard = new Scenes.WizardScene(
   STRINGS.actions.add_task.label,
   ctx => {
-    ctx.session.db = readDbAndCheckForAdmin(ctx.from);
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    if (
+      ctx.from.id != ctx.session.db.admin.id &&
+      ctx.session.db.state.locked === true
+    ) {
+      ctx.reply(
+        "Bot is currently locked and only the bot admin is allowed to add or remove users from the monitored list."
+      );
+      return ctx.scene.leave();
+    }
     ctx.reply(
       "Because of limitations with how Telegram bots work, to add a user to the list of entities that will get node status report, is necessary to send the command '/addMeToReport' via private chat to the bot or by the bot admin in a chat group."
     );
@@ -142,9 +149,10 @@ const addTaskWizard = new Scenes.WizardScene(
 const editTaskWizard = new Scenes.WizardScene(
   STRINGS.actions.edit_task.label,
   ctx => {
-    ctx.session.db = readDbAndCheckForAdmin(ctx.from);
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    ctx.session.loop = 0;
     if (
-      ctx.session.db.locked === true &&
+      ctx.session.db.state.locked === true &&
       ctx.from.id != ctx.session.db.admin.id
     ) {
       // Bot admin is the only one that can delete nodes from monitoring
@@ -172,17 +180,17 @@ const editTaskWizard = new Scenes.WizardScene(
   },
   ctx => {
     let usersToRemove = ctx.message.text;
-    // TODO: possible infinite loop if no correct reply is given, test if
-    // loop variable increments
-    let loops = 0;
     if (lib.validateUserList(usersToRemove) === false) {
       // if the input is not a valid list of users separated by spaces
       ctx.reply(
-        "The previous input is not valid, please send one or more users separated by spaces (i.e '@user1 @user2')"
+        "The previous input is not valid, telegram usernames must be at least 5 characters long and can only contain letters, numbers and underscore ([a-z][0-9]_).\n\nPlease send one or more users separated by spaces (i.e '@user1 @user2')"
       );
-      loops += 1;
-      console.log(loops);
-      return;
+      ctx.session.loop += 1;
+      if (ctx.session.loop > 5) {
+        return ctx.scene.leave();
+      } else {
+        return;
+      }
     } else {
       // if the list of users is valid, check their existance in the report list
       // and remove them
@@ -190,13 +198,12 @@ const editTaskWizard = new Scenes.WizardScene(
       ctx.reply(reply);
     }
     return ctx.scene.leave();
-    //TODO: test adding and deleting users from the report list
   }
 );
 const checkTaskWizard = new Scenes.WizardScene(
   STRINGS.actions.check_task.label,
   ctx => {
-    ctx.session.db = readDbAndCheckForAdmin(ctx.from);
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
     let reply = "";
     if (ctx.session.db.report.length > 0) {
       reply += addEachUserToReply(STRINGS.msg7, ctx.session.db.report);
@@ -213,5 +220,6 @@ module.exports = {
   checkNodesWizard: checkNodesWizard,
   addTaskWizard: addTaskWizard,
   editTaskWizard: editTaskWizard,
-  checkTaskWizard: checkTaskWizard
+  checkTaskWizard: checkTaskWizard,
+  addEachUserToReply: addEachUserToReply
 };

@@ -51,7 +51,7 @@ function create10MinutesTaskReply(firstState, secondState) {
     reply += STRINGS.NODES_BLOCK_HEIGHT_REPLIES.msg4 + "\n\n";
     reply += `One or more of your nodes being monitored is offline or lagging in blocks by more than ${MAX_ALLOWED_BLOCK_GAP} blocks.\n\n`;
   } else if (secondState.isInAlert === false && firstState.isInAlert === true) {
-    // if alert foes from on to off
+    // if alert goes from on to off
     reply += STRINGS.NODES_BLOCK_HEIGHT_REPLIES.msg3 + "\n\n";
     reply += `Your monitored nodes have recovered.\n\n`;
     fs.unlinkSync(customPath(STATE_PATH));
