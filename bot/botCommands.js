@@ -88,6 +88,14 @@ function lock(currentUser) {
   }
   return reply;
 }
+function showListOfMonitored(db) {
+  let reply = "You are currently monitoring the following nodes:\n\n";
+  for (let eachNode of db.monitored) {
+    reply += `Node name: ${eachNode.name}.\nNode IP: ${eachNode.ip}`;
+  }
+
+  return reply;
+}
 function addMeToReport(ctxFrom) {
   return model.updateDbReport(ctxFrom);
 }
@@ -108,5 +116,6 @@ module.exports = {
   showListOfPreps: showListOfPreps,
   addMeToReport: addMeToReport,
   lock: lock,
-  unlock: unlock
+  unlock: unlock,
+  showListOfMonitored: showListOfMonitored
 };

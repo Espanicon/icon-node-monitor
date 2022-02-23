@@ -140,10 +140,11 @@ iconNodeMonitorBot.command("/addGroupToReport", ctx => {
   ctx.reply("Command /addGroupToReport sent but is not yet implemeted");
 });
 // /showListOfMonitored command
-// TODO
+// TODO: Maybe an unnecesary command?
 iconNodeMonitorBot.command("/showListOfMonitored", ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
-  ctx.reply("Command /showListOfMonitored sent but is not yet implemented");
+  let reply = botCommands.showListOfMonitored(db);
+  ctx.reply(reply);
 });
 // /summary command
 // TODO: implement a command that shows a summary of all monitored nodes
