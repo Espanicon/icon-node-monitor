@@ -5,7 +5,7 @@ const httpRequest = require("./httpRequest");
 const PARAMS = {
   port: 9000,
   path: "/admin/chain/0x1",
-  timeout: 4000
+  timeout: 7000
 };
 const NODES = [
   { name: "offline", ip: "35.170.9.187" },

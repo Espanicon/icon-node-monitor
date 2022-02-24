@@ -227,15 +227,24 @@ iconNodeMonitorBot.command("checkMonitoredNodesHeight", async ctx => {
 iconNodeMonitorBot.launch();
 
 // Function to send message to TG group
-function botSendMsgFunction(arrayOfUsersToReport, reply) {
-  for (let eachUserToReport of arrayOfUsersToReport) {
-    iconNodeMonitorBot.telegram.sendMessage(eachUserToReport.id, reply);
+function botSendMsgFunction(taskResult) {
+  let db = model.readDb();
+  if (taskResult == null) {
+  } else {
+    if (db.report.length > 0) {
+      for (let eachUserToReport of db.report) {
+        iconNodeMonitorBot.telegram.sendMessage(
+          eachUserToReport.id,
+          taskResult
+        );
+      }
+    }
   }
 }
 
 // TODO: implement recursive check every hour for goloop version
 // Running recursive block check every minute
-function runEveryMinute() {
+async function runEveryMinute() {
   if (fs.existsSync(customPath(_DB_))) {
     let db = JSON.parse(fs.readFileSync(customPath(_DB_)));
     if (db.report.length > 0) {
@@ -243,11 +252,8 @@ function runEveryMinute() {
         "Running recursive task every minute. users to report in case of node issues are: ",
         db.report
       );
-      tasks.checkMonitoredNodesTask(
-        botSendMsgFunction,
-        db.report,
-        botCommands.checkMonitoredAndBlockProducersHeight
-      );
+      let taskResult = await tasks.checkMonitoredNodesTask();
+      botSendMsgFunction(taskResult);
     } else {
       console.log("No users added to report list, skipping recursive check");
     }

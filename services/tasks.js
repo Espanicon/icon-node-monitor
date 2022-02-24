@@ -3,6 +3,7 @@
 const fs = require("fs");
 const customPath = require("./customPath.js");
 const { model } = require("../model");
+const botCommands = require("../bot/botCommands.js");
 
 // Global constants
 const STRINGS = model.getStrings();
@@ -23,7 +24,8 @@ function getBlankState() {
 const INTERVALS = {
   oneSecond: 1000,
   oneMinute: 60000,
-  tenMinutes: 600000
+  tenMinutes: 600000,
+  oneHour: 3600000
 };
 
 function setAlarmState(data) {
@@ -65,9 +67,10 @@ function create10MinutesTaskReply(firstState, secondState) {
   return reply;
 }
 
-async function checkMonitoredNodesTask(botContext, botId, makeCheck) {
+async function checkMonitoredNodesTask() {
   let nodesFileExists = model.prepsFileExists();
   let monitoredNodesExists = model.monitoredNodesExists();
+  let makeCheck = botCommands.checkMonitoredAndBlockProducersHeight;
 
   if (nodesFileExists && monitoredNodesExists) {
     const nodes = PREPS;
@@ -106,7 +109,9 @@ async function checkMonitoredNodesTask(botContext, botId, makeCheck) {
         console.log("nodes ok\n\n");
       } else {
         fs.writeFileSync(STATE_PATH, JSON.stringify(secondState));
-        botContext(botId, reply);
+        // botContext(botId, reply);
+        console.log("reply from task run: ", reply);
+        return reply;
       }
     } catch (err) {
       console.log("error running task");
@@ -118,6 +123,12 @@ async function checkMonitoredNodesTask(botContext, botId, makeCheck) {
       "No nodes have been added to monitored list, bypassing recursive task"
     );
   }
+  return null;
+}
+
+function compareGoloopVersionsTask() {
+  // this task will run once every hour to check if the node goloop version
+  // is up to date
 }
 
 module.exports = {

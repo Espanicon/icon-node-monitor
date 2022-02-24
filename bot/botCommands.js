@@ -1,7 +1,8 @@
 // bot commands
 //
-const { getChainAndNodesHeight, customPath } = require("../services");
-const fs = require("fs");
+// const { getChainAndNodesHeight, customPath } = require("../services");
+const getChainAndNodesHeight = require("../services/getChainAndNodesHeight.js");
+const customPath = require("../services/customPath.js");
 const { model } = require("../model");
 
 /**

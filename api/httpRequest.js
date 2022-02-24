@@ -14,10 +14,10 @@ const http = require("http");
  */
 async function httpRequest(params, data = false) {
   const promisifiedQuery = new Promise((resolve, reject) => {
-    console.log("query ip: " + params.hostname);
+    console.log("Making http request to: " + params.hostname);
     const query = http.request(params, res => {
       // Print status code on console
-      console.log("Status Code: " + res.statusCode);
+      console.log("Status code of http response: " + res.statusCode);
 
       // Process chunked data
       let rawData = "";
@@ -33,12 +33,14 @@ async function httpRequest(params, data = false) {
 
       // if error, print on console
       res.on("error", err => {
-        console.log("Got error: ", +err.message);
+        console.log("Error while running http request: ", +err);
       });
     });
     // If request timeout destroy request
     query.on("timeout", () => {
-      console.log("timeout. destroying query");
+      console.log(
+        `timeout while running http request with no response after ${params.timeout} ms. destroying query`
+      );
       query.destroy();
     });
     // Handle query error
