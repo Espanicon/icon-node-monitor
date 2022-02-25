@@ -135,11 +135,11 @@ function getLatestVersion(dockerTags) {
   //
 }
 
-async function compareGoloopVersionsTask() {
+async function compareGoloopVersionsTask(alarm = false) {
   // this task will run once every hour to check if the node goloop version
   // is up to date
   let db = model.readDb();
-  let alarmState = false;
+  let alarmState = alarm;
   let reply = "Goloop version check on all monitored nodes.\n\n";
   let result = {
     version: null,

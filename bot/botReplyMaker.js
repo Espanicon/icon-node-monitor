@@ -32,7 +32,7 @@ function makeNodesHeightAndGapReply(data) {
 function makeUpdateListOfPrepsReply(data) {
   const lineBreaker = "-------------";
   let reply = "List of Preps in descending order of rank in the network:\n\n";
-  for (let node of data.NODES_ARRAY) {
+  for (let node of data) {
     reply +=
       `Node name: ${node.name}\nNode address: ${node.address}\nNode IP: ${node.ip}\n` +
       lineBreaker +

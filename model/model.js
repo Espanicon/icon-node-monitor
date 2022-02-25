@@ -38,7 +38,7 @@ function getStrings() {
 
 function updatePrepsList() {
   // rebuilds the preps.json file
-  syncGetPreps(customPath(_PREPS_));
+  return syncGetPreps(customPath(_PREPS_));
 }
 
 function getListOfPreps() {
@@ -47,9 +47,9 @@ function getListOfPreps() {
     preps = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
   } catch (err) {
     console.log("Error while reading data/preps.json", err);
-    console.log("Creating new list of preps");
-    updatePrepsList();
-    preps = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
+    // console.log("Creating new list of preps");
+    // updatePrepsList();
+    // preps = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
   }
   return preps;
 }

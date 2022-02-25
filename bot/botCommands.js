@@ -24,19 +24,33 @@ async function checkMonitoredNodesHeight() {
 /**
  * bot command '/checkBlockProducersHeight'
  */
+
+function getListOfPreps() {
+  let preps = model.getListOfPreps();
+  if (preps == null) {
+    return null;
+  } else {
+    return preps.NODES_ARRAY;
+  }
+}
+
 async function checkBlockProducersHeight() {
-  const preps = model.getListOfPreps().NODES_ARRAY;
-  const check = chainAndNodesCheck(preps);
-  return check;
+  const preps = getListOfPreps();
+
+  if (preps == null) {
+    return null;
+  } else {
+    return chainAndNodesCheck(preps);
+  }
 }
 
 /**
  * bot command '/checkMonitoredAndBlockProducersHeight'
  */
 async function checkMonitoredAndBlockProducersHeight() {
-  const preps = model.getListOfPreps().NODES_ARRAY;
+  const preps = getListOfPreps();
   const monitored = model.readDb().monitored;
-  if (monitored.length > 0) {
+  if (monitored.length > 0 && preps != null) {
     // if there are no nodes added to the list of monitored we return a null value
     const check = chainAndNodesCheck(preps, monitored);
     return check;
@@ -118,15 +132,17 @@ function addGroupToReport(ctxChat, ctxFrom) {
   return reply;
 }
 
-function updatePrepsList() {
-  model.updatePrepsList();
+async function updatePrepsList() {
+  let result = await model.updatePrepsList();
+  if (result === true) {
+    return "Prep list was successfully updated";
+  } else {
+    return "Error while trying to update Prep list";
+  }
 }
 
 function showListOfPreps() {
-  return model.getListOfPreps();
-}
-function checkVersion(foo, bar) {
-  //
+  return getListOfPreps();
 }
 
 module.exports = {
@@ -140,6 +156,5 @@ module.exports = {
   unlock: unlock,
   showListOfMonitored: showListOfMonitored,
   testReport: testReport,
-  addGroupToReport: addGroupToReport,
-  checkVersion: checkVersion
+  addGroupToReport: addGroupToReport
 };
