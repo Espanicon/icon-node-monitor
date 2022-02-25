@@ -20,7 +20,8 @@ function dbInitState() {
     monitored: [],
     report: [],
     admin: { id: null, username: null },
-    state: { locked: false }
+    state: { locked: false },
+    versionCheck: true
   };
 }
 function getStrings() {
@@ -224,6 +225,20 @@ function unlock() {
   writeDb(db);
 }
 
+function versionCheckStatus(statusString) {
+  // statusString can either be 'start' or 'stop'
+  let db = readDb();
+  if (statusString === "stop") {
+    db.versionCheck = false;
+  } else if (statusString === "start") {
+    db.versionCheck = true;
+  } else {
+    // statusString can only be 'start' or 'stop' this condition should
+    // not happen
+  }
+  writeDb(db);
+}
+
 module.exports = {
   readDb: readDb,
   writeDb: writeDb,
@@ -238,5 +253,6 @@ module.exports = {
   removeUsersFromDbReport: removeUsersFromDbReport,
   readDbAndCheckForAdmin: readDbAndCheckForAdmin,
   lock: lock,
-  unlock: unlock
+  unlock: unlock,
+  versionCheckStatus: versionCheckStatus
 };

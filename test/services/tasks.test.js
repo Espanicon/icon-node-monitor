@@ -1,19 +1,12 @@
 // tasks.test.js
-require("dotenv").config();
-const { tasks, customPath } = require("../../services");
-const { botCommands } = require("../../bot");
-const fs = require("fs");
+const { tasks } = require("../../services");
+const { botReplyMaker } = require("../../bot");
+// test on version check task;
 
-const NODES = JSON.parse(fs.readFileSync(customPath("/data/preps.json")));
-
-function botSendMsgFunction(botId, reply) {
-  console.log("Message from bot");
+async function versionCheckTask() {
+  let result = await tasks.compareGoloopVersionsTask();
+  let reply = botReplyMaker.makeVersionCheckReply(result);
   console.log(reply);
-  return;
 }
 
-tasks.checkMonitoredNodesTask(
-  botSendMsgFunction,
-  10,
-  botCommands.checkMonitoredAndBlockProducersHeight
-);
+versionCheckTask();

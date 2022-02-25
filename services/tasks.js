@@ -4,6 +4,8 @@ const fs = require("fs");
 const customPath = require("./customPath.js");
 const { model } = require("../model");
 const botCommands = require("../bot/botCommands.js");
+const lib = require("./lib.js");
+const { getNodeGoloopVersion, getGoloopImageTags } = require("../api");
 
 // Global constants
 const STRINGS = model.getStrings();
@@ -126,12 +128,49 @@ async function checkMonitoredNodesTask() {
   return null;
 }
 
-function compareGoloopVersionsTask() {
+function nodeVersionIsLatest(node, latestVersion) {
+  //
+}
+function getLatestVersion(dockerTags) {
+  //
+}
+
+async function compareGoloopVersionsTask() {
   // this task will run once every hour to check if the node goloop version
   // is up to date
+  let db = model.readDb();
+  let result = {
+    version: null,
+    nodes: []
+  };
+
+  if (db.monitored.length > 0 && db.report.length > 0) {
+    // if there are nodes to monitor and people to report
+
+    let dockerImageVersions = await getGoloopImageTags();
+    let latestVersion = lib.getLatestVersion(dockerImageVersions);
+    result.version = latestVersion;
+
+    for (let eachNode of db.monitored) {
+      let nodeDataWithVersion = await getNodeGoloopVersion(eachNode);
+      result.nodes.push(nodeDataWithVersion);
+    }
+  } else {
+    console.log(
+      "Skipping version check. either no nodes or people to report has been added"
+    );
+    if (db.monitored > 0) {
+      // if there are nodes but no people to report
+    } else {
+      // if there are people to report but no nodes
+    }
+    return null;
+  }
+  return result;
 }
 
 module.exports = {
   checkMonitoredNodesTask: checkMonitoredNodesTask,
-  INTERVALS: INTERVALS
+  INTERVALS: INTERVALS,
+  compareGoloopVersionsTask: compareGoloopVersionsTask
 };

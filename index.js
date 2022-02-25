@@ -165,24 +165,63 @@ iconNodeMonitorBot.command("/summary", ctx => {
 });
 // /versionCheck {start || stop || pause} command
 // TODO: implement a state for the versionCheck command
-iconNodeMonitorBot.hears(/^(\/\w+\s+(start|stop|pause))$/, ctx => {
+iconNodeMonitorBot.hears(/^(\/\w+\s+(start|stop|run))$/, async ctx => {
+  // ctx.reply("reply sent");
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
-
+  let canChangeVersionCheckState = false;
   let command = ctx.message.text.split(" ");
+  let reply = null;
+
+  if (
+    ctx.from.id != ctx.session.db.admin.id &&
+    ctx.session.db.state.locked === true
+  ) {
+    canChangeVersionCheckState = false;
+  } else {
+    canChangeVersionCheckState = true;
+  }
+
   if (command[0].substring(1) === "versionCheck") {
     // Command /versionCheck sent by user
     console.log(`Command sent by user: ${command[0]} ${command[1]}`);
-    if (command[1] === "start") {
-      ctx.reply("command '/versionCheck start' sent but not yet implemented");
-    } else if (command[1] === "stop") {
-      ctx.reply("command '/versionCheck stop' sent but not yet implemented");
-    } else if (command[1] === "pause") {
-      ctx.reply("command '/versionCheck pause' sent but not yet implemented");
+
+    if (canChangeVersionCheckState === true) {
+      // if the user is the admin or the bot is unlocked than any user can
+      // change the versionCheck status
+      if (command[1] === "start") {
+        model.versionCheckStatus("start"); // this changes the versionCheck status
+        reply =
+          "Version check status: On\n\nRecursive check that runs every hour to verify the version of the node is running.";
+      } else if (command[1] === "stop") {
+        model.versionCheckStatus("stop"); // this changes the versionCheck status
+        reply =
+          "Version check status: Off\n\nRecursive check that runs every hour to verify the version of the node is not running.";
+      } else {
+        // this condition should never happen because the regex should only match
+        // start || stop || pause || run
+      }
     } else {
-      // this condition should never happen because the regex should only match
-      // start || stop || pause
+      // only the bot admin can change the versionCheck status
+      if (command[1] === "run") {
+        // anyone can send '/versionCheck run' commands
+        let result = await tasks.compareGoloopVersionsTask();
+        reply = botReplyMaker.makeVersionCheckReply(result);
+        console.log("result: ", result);
+      } else if (command[1] === "start" || command[1] === "stop") {
+        reply =
+          "The bot is currently locked and only the bot admin can send '/versionCheck stop' and '/versionCheck start' commands";
+      } else {
+        // this condition should never happen because the regex should only match
+        // start || stop || pause || run
+      }
     }
   }
+  // test
+  let dbTest = model.readDb();
+  console.log("Test db:", dbTest);
+  console.log(reply);
+  // test
+  ctx.reply(reply);
 });
 // /checkMonitoredAndBlockProducersHeight command
 iconNodeMonitorBot.command(

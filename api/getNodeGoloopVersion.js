@@ -27,6 +27,4 @@ async function getNodeGoloopVersion(node, params = PARAMS) {
   return result;
 }
 
-module.exports = {
-  getNodeGoloopVersion: getNodeGoloopVersion
-};
+module.exports = getNodeGoloopVersion;

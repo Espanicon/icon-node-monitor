@@ -40,8 +40,9 @@ async function getGoloopImageTags() {
     // console.log(authParams);
 
     const req = await httpsRequest(authParams);
-    // const req = await httpsRequest(PARAMS);
-    return req;
+
+    // return the tags array from the request result
+    return req.tags;
   } catch (err) {
     console.log("error running query");
     console.log(err);

@@ -3,7 +3,9 @@
 // const { getChainAndNodesHeight, customPath } = require("../services");
 const getChainAndNodesHeight = require("../services/getChainAndNodesHeight.js");
 const customPath = require("../services/customPath.js");
+const lib = require("../services/lib.js");
 const { model } = require("../model");
+const { getGoloopImageTags, getNodeGoloopVersion } = require("../api");
 
 /**
  * bot command '/checkMonitoredNodesHeight'
@@ -123,6 +125,9 @@ function updatePrepsList() {
 function showListOfPreps() {
   return model.getListOfPreps();
 }
+function checkVersion(foo, bar) {
+  //
+}
 
 module.exports = {
   checkMonitoredAndBlockProducersHeight: checkMonitoredAndBlockProducersHeight,
@@ -135,5 +140,6 @@ module.exports = {
   unlock: unlock,
   showListOfMonitored: showListOfMonitored,
   testReport: testReport,
-  addGroupToReport: addGroupToReport
+  addGroupToReport: addGroupToReport,
+  checkVersion: checkVersion
 };
