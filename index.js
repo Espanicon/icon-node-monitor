@@ -170,7 +170,7 @@ iconNodeMonitorBot.hears(/^(\/\w+\s+(start|stop|run))$/, async ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   let canChangeVersionCheckState = false;
   let command = ctx.message.text.split(" ");
-  let reply = null;
+  let reply = "foo";
 
   if (
     ctx.from.id != ctx.session.db.admin.id &&
@@ -202,25 +202,15 @@ iconNodeMonitorBot.hears(/^(\/\w+\s+(start|stop|run))$/, async ctx => {
       }
     } else {
       // only the bot admin can change the versionCheck status
-      if (command[1] === "run") {
-        // anyone can send '/versionCheck run' commands
-        let result = await tasks.compareGoloopVersionsTask();
-        reply = botReplyMaker.makeVersionCheckReply(result);
-        console.log("result: ", result);
-      } else if (command[1] === "start" || command[1] === "stop") {
-        reply =
-          "The bot is currently locked and only the bot admin can send '/versionCheck stop' and '/versionCheck start' commands";
-      } else {
-        // this condition should never happen because the regex should only match
-        // start || stop || pause || run
-      }
+      reply =
+        "The bot is currently locked and only the bot admin can send '/versionCheck stop' and '/versionCheck start' commands";
+    }
+    if (command[1] === "run") {
+      // anyone can send '/versionCheck run' commands
+      let result = await tasks.compareGoloopVersionsTask();
+      reply = botReplyMaker.makeVersionCheckReply(result);
     }
   }
-  // test
-  let dbTest = model.readDb();
-  console.log("Test db:", dbTest);
-  console.log(reply);
-  // test
   ctx.reply(reply);
 });
 // /checkMonitoredAndBlockProducersHeight command
