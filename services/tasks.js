@@ -140,6 +140,7 @@ async function compareGoloopVersionsTask() {
   // is up to date
   let db = model.readDb();
   let alarmState = false;
+  let reply = "Goloop version check on all monitored nodes.\n\n";
   let result = {
     version: null,
     nodes: []
@@ -156,10 +157,12 @@ async function compareGoloopVersionsTask() {
     let dockerImageVersions = await getGoloopImageTags();
     let latestVersion = lib.getLatestVersion(dockerImageVersions);
     result.version = latestVersion;
+    reply += `Goloop docker image version: ${result.version}\n\n`;
 
     for (let eachNode of db.monitored) {
       let nodeDataWithVersion = await getNodeGoloopVersion(eachNode);
       result.nodes.push(nodeDataWithVersion);
+      reply += `Node name: ${nodeDataWithVersion.name}\nNode IP: ${nodeDataWithVersion.ip}\nNode goloop version: ${nodeDataWithVersion.version}\n\n`;
     }
 
     for (let eachNode of result.nodes) {
@@ -183,12 +186,17 @@ async function compareGoloopVersionsTask() {
     }
     return null;
   }
-
+  // uncomment the below line for testing the function
+  // alarmState = true;
+  //
   if (alarmState === false) {
     return null;
   } else {
-    return result;
+    return reply;
   }
+
+  // this next line of code should never happen
+  throw "ERROR: error in the code logic of compareGoloopVersionsTask()";
 }
 
 async function recursiveTask(task, sendMsgHandler, interval) {

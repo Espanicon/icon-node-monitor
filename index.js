@@ -164,7 +164,6 @@ iconNodeMonitorBot.command("/summary", ctx => {
   ctx.reply("Command /summary sent but is not yet implemented");
 });
 // /versionCheck {start || stop || pause} command
-// TODO: implement a state for the versionCheck command
 iconNodeMonitorBot.hears(/^(\/\w+\s+(start|stop|run))$/, async ctx => {
   // ctx.reply("reply sent");
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
@@ -260,6 +259,7 @@ function botSendMsgFunction(taskResult) {
   let db = model.readDb();
   if (taskResult == null) {
     // do nothing
+    console.log("Task result: Skipping message to all users");
   } else {
     if (db.report.length > 0) {
       for (let eachUserToReport of db.report) {
@@ -272,7 +272,15 @@ function botSendMsgFunction(taskResult) {
   }
 }
 
-// TODO: implement recursive check every hour for goloop version
+// Running recursive version check every hour
+async function runEveryHour() {
+  tasks.recursiveTask(
+    tasks.compareGoloopVersionsTask,
+    botSendMsgFunction,
+    tasks.INTERVALS.oneHour
+  );
+  setTimeout(runEveryHour, tasks.INTERVALS.oneHour);
+}
 // Running recursive block check every minute
 async function runEveryMinute() {
   tasks.recursiveTask(
@@ -282,10 +290,12 @@ async function runEveryMinute() {
   );
   setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
 }
+
+// recursive tasks
 setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
+setTimeout(runEveryHour, tasks.INTERVALS.oneHour);
 
 // Catching uncaught exceptions
-//
 function isTelegramErrorType(error) {
   try {
     let constructorString = error.constructor.toString();

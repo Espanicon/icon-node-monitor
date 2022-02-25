@@ -83,7 +83,7 @@ class Bot {
 function botSendMsgFunction(taskResult) {
   let db = model.readDb();
   if (taskResult == null) {
-    console.log("Skipping message to users all nodes are up to date");
+    console.log("Skipping task");
   } else {
     if (db.report.length > 0) {
       for (let eachUserToReport of db.report) {
