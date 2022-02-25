@@ -41,20 +41,7 @@ function makeUpdateListOfPrepsReply(data) {
   return reply;
 }
 
-function makeVersionCheckReply(versionData) {
-  let reply = null;
-  if (versionData == null) {
-  } else {
-    reply = `Latest Goloop version: ${versionData.version}\n\n`;
-    versionData.nodes.forEach(node => {
-      reply += `Node name: ${node.name}\nNode IP: ${node.ip}\nNode Version: ${node.version}\n\n`;
-    });
-  }
-  return reply;
-}
-
 module.exports = {
   makeNodesHeightAndGapReply: makeNodesHeightAndGapReply,
-  makeUpdateListOfPrepsReply: makeUpdateListOfPrepsReply,
-  makeVersionCheckReply: makeVersionCheckReply
+  makeUpdateListOfPrepsReply: makeUpdateListOfPrepsReply
 };
