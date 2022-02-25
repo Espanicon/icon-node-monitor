@@ -5,8 +5,13 @@ const { botReplyMaker } = require("../../bot");
 
 async function versionCheckTask() {
   let result = await tasks.compareGoloopVersionsTask();
+
   let reply = botReplyMaker.makeVersionCheckReply(result);
-  console.log(reply);
+  if (reply == null) {
+    console.log("Skipping versionCheck");
+  } else {
+    console.log(reply);
+  }
 }
 
 versionCheckTask();

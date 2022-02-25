@@ -42,11 +42,14 @@ function makeUpdateListOfPrepsReply(data) {
 }
 
 function makeVersionCheckReply(versionData) {
-  let reply = `Latest Goloop version: ${versionData.version}\n\n`;
-  versionData.nodes.forEach(node => {
-    reply += `Node name: ${node.name}\nNode IP: ${node.ip}\nNode Version: ${node.version}\n\n`;
-  });
-
+  let reply = null;
+  if (versionData == null) {
+  } else {
+    reply = `Latest Goloop version: ${versionData.version}\n\n`;
+    versionData.nodes.forEach(node => {
+      reply += `Node name: ${node.name}\nNode IP: ${node.ip}\nNode Version: ${node.version}\n\n`;
+    });
+  }
   return reply;
 }
 

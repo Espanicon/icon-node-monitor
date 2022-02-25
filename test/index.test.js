@@ -83,6 +83,7 @@ class Bot {
 function botSendMsgFunction(taskResult) {
   let db = model.readDb();
   if (taskResult == null) {
+    console.log("Skipping message to users all nodes are up to date");
   } else {
     if (db.report.length > 0) {
       for (let eachUserToReport of db.report) {
@@ -96,21 +97,21 @@ function botSendMsgFunction(taskResult) {
 }
 
 async function runEveryMinute() {
-  if (fs.existsSync(customPath(_DB_))) {
-    let db = JSON.parse(fs.readFileSync(customPath(_DB_)));
-    if (db.report.length > 0) {
-      console.log(
-        "Running recursive task every minute. Users to report in case of node issues are: ",
-        db.report
-      );
-      let taskResult = await tasks.checkMonitoredNodesTask();
-      botSendMsgFunction(taskResult);
-    } else {
-      console.log("No users added to report list, skipping recursive check");
-    }
-  }
-
+  tasks.recursiveTask(
+    tasks.checkMonitoredNodesTask,
+    botSendMsgFunction,
+    tasks.INTERVALS.oneMinute
+  );
   setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
+}
+
+async function runEveryMinuteToo() {
+  tasks.recursiveTask(
+    tasks.compareGoloopVersionsTask,
+    botSendMsgFunction,
+    tasks.INTERVALS.oneMinute
+  );
+  setTimeout(runEveryMinuteToo, tasks.INTERVALS.oneMinute);
 }
 
 (async () => {
@@ -162,5 +163,6 @@ async function runEveryMinute() {
   // let result9 = newBot.editTask();
   // console.log(result9, breakLine);
 
-  setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
+  // setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
+  setTimeout(runEveryMinuteToo, tasks.INTERVALS.oneMinute);
 })();

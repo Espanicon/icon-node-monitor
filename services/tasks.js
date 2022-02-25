@@ -139,13 +139,19 @@ async function compareGoloopVersionsTask() {
   // this task will run once every hour to check if the node goloop version
   // is up to date
   let db = model.readDb();
+  let alarmState = false;
   let result = {
     version: null,
     nodes: []
   };
+  console.log(db);
 
-  if (db.monitored.length > 0 && db.report.length > 0) {
-    // if there are nodes to monitor and people to report
+  if (
+    db.monitored.length > 0 &&
+    db.report.length > 0 &&
+    db.versionCheck === true
+  ) {
+    // if there are nodes to monitor and people to report and versionCheck is on
 
     let dockerImageVersions = await getGoloopImageTags();
     let latestVersion = lib.getLatestVersion(dockerImageVersions);
@@ -154,6 +160,17 @@ async function compareGoloopVersionsTask() {
     for (let eachNode of db.monitored) {
       let nodeDataWithVersion = await getNodeGoloopVersion(eachNode);
       result.nodes.push(nodeDataWithVersion);
+    }
+
+    for (let eachNode of result.nodes) {
+      // TODO: this is the logic to set the alarm on, if the docker version of
+      // goloop (result.version) is not the same as the goloop version of all
+      // the nodes (eachNode.version) then we set 'alarmState = true'.
+      // this might fail if the version tag is 'latest' or if the version
+      // is a patch (i.e 'v1.2.3-e3a15f0')
+      if (result.version != eachNode.version) {
+        alarmState = true;
+      }
     }
   } else {
     console.log(
@@ -166,11 +183,31 @@ async function compareGoloopVersionsTask() {
     }
     return null;
   }
-  return result;
+
+  if (alarmState === false) {
+    return null;
+  } else {
+    return result;
+  }
+}
+
+async function recursiveTask(task, sendMsgHandler, interval) {
+  let db = model.readDb();
+  if (db.report.length > 0) {
+    console.log(
+      `Running recursive task every ${interval} ms. Users to report for this task are: `,
+      db.report
+    );
+    let taskResult = await task();
+    sendMsgHandler(taskResult);
+  } else {
+    console.log("No users added to the report list, skipping recursive task");
+  }
 }
 
 module.exports = {
   checkMonitoredNodesTask: checkMonitoredNodesTask,
   INTERVALS: INTERVALS,
-  compareGoloopVersionsTask: compareGoloopVersionsTask
+  compareGoloopVersionsTask: compareGoloopVersionsTask,
+  recursiveTask: recursiveTask
 };
