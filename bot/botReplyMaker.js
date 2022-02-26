@@ -24,7 +24,7 @@ function makeNodesHeightAndGapReply(data) {
       reply += `Node name: ${node.name}\nHeight: ${node.height}\nBlock gap:${node.gap}\n\n`;
     }
   } else {
-    reply = STRINGS.msg2;
+    reply = STRINGS.msg8;
   }
   return reply;
 }

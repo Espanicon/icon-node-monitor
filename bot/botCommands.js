@@ -20,10 +20,6 @@ async function checkMonitoredNodesHeight() {
   }
 }
 
-/**
- * bot command '/checkBlockProducersHeight'
- */
-
 function getListOfPreps() {
   let preps = model.getListOfPreps();
   if (preps == null) {
@@ -136,7 +132,7 @@ async function updatePrepsList() {
   if (result === true) {
     return "Prep list was successfully updated";
   } else {
-    return "Error while trying to update Prep list";
+    return "Error while trying to update Prep list. In order to create and/or update the Prep list is necessary to add at least one node to monitor.";
   }
 }
 

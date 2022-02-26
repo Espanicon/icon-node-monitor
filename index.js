@@ -106,10 +106,10 @@ iconNodeMonitorBot.action(STRINGS.actions.edit_task.tag, (ctx, next) => {
 
 // bot commands
 // /test command
-iconNodeMonitorBot.command("/test", async ctx => {
-  let commands = await ctx.telegram.botCommandsScopeChat;
-  console.log(commands);
-});
+// iconNodeMonitorBot.command("/test", async ctx => {
+//   let commands = await ctx.telegram.botCommandsScopeChat;
+//   console.log(commands);
+// });
 // start command
 iconNodeMonitorBot.command("start", ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
@@ -172,12 +172,6 @@ iconNodeMonitorBot.command("/showListOfMonitored", ctx => {
   replyWrapper(ctx, reply);
 });
 // /summary command
-// TODO: implement a command that shows a summary of all monitored nodes
-// * shows IP
-// * shows goloop version running
-// * shows name that user gave the node
-// * shows current block height
-//
 iconNodeMonitorBot.command("/summary", async ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   let reply = await botCommands.summary(db);
@@ -188,45 +182,50 @@ iconNodeMonitorBot.hears(/^(\/\w+\s+(start|stop|run))$/, async ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   let command = ctx.message.text.split(" ");
   let reply = null;
-  console.log(command[1], typeof command[1]);
 
-  if (command[1] === "run") {
-    // anyone can send '/versionCheck run' commands
-    reply = await tasks.compareGoloopVersionsTask(true);
-  } else if (command[1] === "start" || command[1] === "stop") {
-    // check if the user is the bot admin or if the bot admin is unlocked
-    if (
-      ctx.from.id != ctx.session.db.admin.id &&
-      ctx.session.db.state.locked === true
-    ) {
-      reply =
-        "The bot is currently locked and only the bot admin can send '/versionCheck stop' and '/versionCheck start' commands";
-    } else {
-      if (command[1] === "start") {
-        model.versionCheckStatus("start"); // this changes the versionCheck status
+  if (db.monitored.length > 0) {
+    if (command[1] === "run") {
+      // anyone can send '/versionCheck run' commands
+      reply = await tasks.compareGoloopVersionsTask(true);
+    } else if (command[1] === "start" || command[1] === "stop") {
+      // check if the user is the bot admin or if the bot admin is unlocked
+      if (
+        ctx.from.id != ctx.session.db.admin.id &&
+        ctx.session.db.state.locked === true
+      ) {
         reply =
-          "Version check status: On\n\nRecursive check that runs every hour to verify the version of the node is running.";
-      } else if (command[1] === "stop") {
-        model.versionCheckStatus("stop"); // this changes the versionCheck status
-        reply =
-          "Version check status: Off\n\nRecursive check that runs every hour to verify the version of the node is not running.";
+          "The bot is currently locked and only the bot admin can send '/versionCheck stop' and '/versionCheck start' commands";
       } else {
-        // this condition should never happen because the regex should only match
-        // start || stop || pause || run
+        if (command[1] === "start") {
+          model.versionCheckStatus("start"); // this changes the versionCheck status
+          reply =
+            "Version check status: On\n\nRecursive check that runs every hour to verify the version of the node is running.";
+        } else if (command[1] === "stop") {
+          model.versionCheckStatus("stop"); // this changes the versionCheck status
+          reply =
+            "Version check status: Off\n\nRecursive check that runs every hour to verify the version of the node is not running.";
+        } else {
+          // this condition should never happen because the regex should only match
+          // start || stop || pause || run
+        }
       }
+    } else {
+      reply =
+        "Unrecognized flag sent with /versionCheck command. /versionCheck can only be sent with either 'start', 'stop' or 'run' as a flag";
     }
   } else {
     reply =
-      "Unrecognized flag sent with /versionCheck command. /versionCheck can only be sent with either 'start', 'stop' or 'run' as a flag";
+      "There are no nodes added to monitored list, please send '/start' command to add a node before running '/versionCheck' command";
   }
 
   replyWrapper(ctx, reply);
 });
 // /checkMonitoredAndBlockProducersHeight command
 iconNodeMonitorBot.command(
-  "checkMonitoredAndBlockProducersHeight",
+  "/checkMonitoredAndBlockProducersHeight",
   async ctx => {
     ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    ctx.reply("Running check, please wait a few seconds...");
     const data = await botCommands.checkMonitoredAndBlockProducersHeight();
     const reply = botReplyMaker.makeNodesHeightAndGapReply(data);
     replyWrapper(ctx, reply);
@@ -235,6 +234,7 @@ iconNodeMonitorBot.command(
 // /updatePrepsList command
 iconNodeMonitorBot.command("/updatePrepsList", async ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  ctx.reply("Running check, please wait a few seconds...");
   let reply = await botCommands.updatePrepsList();
   replyWrapper(ctx, reply);
 });
@@ -243,7 +243,10 @@ iconNodeMonitorBot.command("/showListOfPreps", ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   reply = null;
   let data = botCommands.showListOfPreps();
+  console.log("data: ", data);
   if (data == null) {
+    reply =
+      "In order to get the list of Preps you need to first add at least one node to monitor, send '/start' command to add a node";
   } else {
     reply = botReplyMaker.makeUpdateListOfPrepsReply(data);
   }
@@ -253,13 +256,15 @@ iconNodeMonitorBot.command("/showListOfPreps", ctx => {
 // /checkBlockProducersHeight command
 iconNodeMonitorBot.command("checkBlockProducersHeight", async ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  ctx.reply("Running check, please wait a few seconds...");
   let data = await botCommands.checkBlockProducersHeight();
   let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
-  replyWapper(ctx, reply);
+  replyWrapper(ctx, reply);
 });
 // /checkMonitoredHeight command
 iconNodeMonitorBot.command("checkMonitoredNodesHeight", async ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  ctx.reply("Running check, please wait a few seconds...");
   let data = await botCommands.checkMonitoredNodesHeight();
   let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
   replyWrapper(ctx, reply);

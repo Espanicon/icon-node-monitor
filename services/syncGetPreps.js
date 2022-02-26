@@ -105,7 +105,6 @@ async function asyncRun(path = FILE_PATH) {
         let fileData = JSON.stringify({ NODES_ARRAY: parsedPReps });
         fs.writeFileSync(path, fileData);
         console.log(`file '${path}' created`);
-        console.log(parsedPReps);
         // if the process was finished corretly we return true, the function calling
         // this method will receive this and validate that the update on the Preps
         // list was done correctly

@@ -42,16 +42,20 @@ function updatePrepsList() {
 }
 
 function getListOfPreps() {
-  let preps = null;
-  try {
-    preps = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
-  } catch (err) {
-    console.log("Error while reading data/preps.json", err);
-    // console.log("Creating new list of preps");
-    // updatePrepsList();
-    // preps = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
+  let result = null;
+  if (prepsFileExists() === true) {
+    try {
+      result = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
+    } catch (err) {
+      console.log("Error while reading data/preps.json", err);
+      // console.log("Creating new list of preps");
+      // updatePrepsList();
+      // preps = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
+    }
+  } else {
+    result = updatePrepsList();
   }
-  return preps;
+  return result;
 }
 function prepsFileExists() {
   return fs.existsSync(customPath(_PREPS_));
