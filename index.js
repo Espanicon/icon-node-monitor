@@ -178,9 +178,10 @@ iconNodeMonitorBot.command("/showListOfMonitored", ctx => {
 // * shows name that user gave the node
 // * shows current block height
 //
-iconNodeMonitorBot.command("/summary", ctx => {
+iconNodeMonitorBot.command("/summary", async ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
-  replyWrapper(ctx, "Command /summary sent but is not yet implemented");
+  let reply = await botCommands.summary(db);
+  replyWrapper(ctx, reply);
 });
 // /versionCheck {start || stop || pause} command
 iconNodeMonitorBot.hears(/^(\/\w+\s+(start|stop|run))$/, async ctx => {

@@ -1,6 +1,5 @@
 // bot commands
 //
-// const { getChainAndNodesHeight, customPath } = require("../services");
 const getChainAndNodesHeight = require("../services/getChainAndNodesHeight.js");
 const customPath = require("../services/customPath.js");
 const lib = require("../services/lib.js");
@@ -144,6 +143,30 @@ async function updatePrepsList() {
 function showListOfPreps() {
   return getListOfPreps();
 }
+async function summary(db) {
+  //
+  let lineBreak = "=======================";
+  let reply = `Summary of the nodes and the users in the report list.\n\n${lineBreak}\nReport list:\n\n`;
+
+  if (db.report.length > 0) {
+    db.report.forEach(user => {
+      reply += `Username: @${user.username}\n`;
+    });
+  } else {
+    reply += `There are no users added to the report list.\n`;
+  }
+  reply += `\n${lineBreak}\nNodes being monitored:\n\n`;
+
+  if (db.monitored.length > 0) {
+    db.monitored.forEach(node => {
+      reply += `Node name: ${node.name}\nNode ip: ${node.ip}\n`;
+    });
+  } else {
+    reply += `There are no nodes to monitor added yet\n`;
+  }
+
+  return reply;
+}
 
 module.exports = {
   checkMonitoredAndBlockProducersHeight: checkMonitoredAndBlockProducersHeight,
@@ -156,5 +179,6 @@ module.exports = {
   unlock: unlock,
   showListOfMonitored: showListOfMonitored,
   testReport: testReport,
-  addGroupToReport: addGroupToReport
+  addGroupToReport: addGroupToReport,
+  summary: summary
 };
