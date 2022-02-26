@@ -1,9 +1,21 @@
-// cronSchedule.js
+// services/task.js
 //
 const fs = require("fs");
-const { customPath } = require("../services");
-const STRINGS = JSON.parse(fs.readFileSync(customPath("data/strings.json")));
+const customPath = require("./customPath.js");
+const { model } = require("../model");
+const botCommands = require("../bot/botCommands.js");
+const lib = require("./lib.js");
+const { getNodeGoloopVersion, getGoloopImageTags } = require("../api");
 
+// Global constants
+const STRINGS = model.getStrings();
+const PREPS = model.getListOfPreps();
+const MAX_ALLOWED_BLOCK_GAP = 100;
+
+// TODO: the entire logic of accessing the state should be moved to models.js
+const STATE_PATH = "data/state.json";
+
+// Functions
 function getBlankState() {
   return {
     highestBlock: 0,
@@ -14,12 +26,9 @@ function getBlankState() {
 const INTERVALS = {
   oneSecond: 1000,
   oneMinute: 60000,
-  tenMinutes: 600000
+  tenMinutes: 600000,
+  oneHour: 3600000
 };
-const MAX_ALLOWED_BLOCK_GAP = 100;
-const STATE_PATH = "data/state.json";
-const MONITOR_PATH = "data/monitor.json";
-const PREPS_PATH = "data/preps.json";
 
 function setAlarmState(data) {
   let result = data;
@@ -46,7 +55,7 @@ function create10MinutesTaskReply(firstState, secondState) {
     reply += STRINGS.NODES_BLOCK_HEIGHT_REPLIES.msg4 + "\n\n";
     reply += `One or more of your nodes being monitored is offline or lagging in blocks by more than ${MAX_ALLOWED_BLOCK_GAP} blocks.\n\n`;
   } else if (secondState.isInAlert === false && firstState.isInAlert === true) {
-    // if alert foes from on to off
+    // if alert goes from on to off
     reply += STRINGS.NODES_BLOCK_HEIGHT_REPLIES.msg3 + "\n\n";
     reply += `Your monitored nodes have recovered.\n\n`;
     fs.unlinkSync(customPath(STATE_PATH));
@@ -60,67 +69,153 @@ function create10MinutesTaskReply(firstState, secondState) {
   return reply;
 }
 
-async function checkMonitoredNodesTask(botContext, botId, makeCheck) {
-  let nodesFileExists = fs.existsSync(customPath(PREPS_PATH));
-  let monitorFileExists = fs.existsSync(customPath(MONITOR_PATH));
+async function checkMonitoredNodesTask() {
+  let nodesFileExists = model.prepsFileExists();
+  let monitoredNodesExists = model.monitoredNodesExists();
+  let makeCheck = botCommands.checkMonitoredAndBlockProducersHeight;
 
-  if (nodesFileExists && monitorFileExists) {
-    const nodes = JSON.parse(fs.readFileSync(customPath(PREPS_PATH), "utf8"));
-    const monitored = JSON.parse(
-      fs.readFileSync(customPath(MONITOR_PATH), "utf8")
-    );
-    console.log(monitored);
-    if (monitored.monitored.length > 0) {
-      try {
-        let firstState = null;
-        let secondState = getBlankState();
-        if (fs.existsSync(customPath(STATE_PATH))) {
-          firstState = JSON.parse(
-            fs.readFileSync(customPath(STATE_PATH), "utf8")
-          );
-        } else {
-          // do nothin
-          firstState = getBlankState();
-        }
-        const data = await makeCheck(nodes.NODES_ARRAY, monitored.monitored);
-        for (let eachNode of data.nodes) {
-          for (let eachMonitor of monitored.monitored) {
-            if (eachMonitor.name === eachNode.name) {
-              secondState.nodes.push(eachNode);
-              secondState.highestBlock = data.highestBlock;
-            }
-          }
-        }
-        // assign states and save last state on file
-        secondState = setAlarmState(secondState);
-        fs.writeFileSync(
-          customPath("data/state.json"),
-          JSON.stringify(secondState)
+  if (nodesFileExists && monitoredNodesExists) {
+    const nodes = PREPS;
+    const monitored = model.readDb().monitored;
+    try {
+      let firstState = null;
+      let secondState = getBlankState();
+      if (fs.existsSync(customPath(STATE_PATH))) {
+        firstState = JSON.parse(
+          fs.readFileSync(customPath(STATE_PATH), "utf8")
         );
-        let reply = create10MinutesTaskReply(firstState, secondState);
-        if (reply === false) {
-          if (fs.existsSync(customPath(STATE_PATH))) {
-            fs.unlinkSync(customPath(STATE_PATH));
-          }
-          console.log("nodes ok\n\n");
-        } else {
-          fs.writeFileSync(STATE_PATH, JSON.stringify(secondState));
-          botContext(botId, reply);
-        }
-      } catch (err) {
-        console.log("error running task");
-        console.log(err);
+      } else {
+        // do nothin
+        firstState = getBlankState();
       }
-    } else {
-      console.log("No nodes have been added to monitor, bypassing cron check");
+      const data = await makeCheck(nodes.NODES_ARRAY, monitored);
+      for (let eachNode of data.nodes) {
+        for (let eachMonitor of monitored) {
+          if (eachMonitor.name === eachNode.name) {
+            secondState.nodes.push(eachNode);
+            secondState.highestBlock = data.highestBlock;
+          }
+        }
+      }
+      // assign states and save last state on file
+      secondState = setAlarmState(secondState);
+      fs.writeFileSync(
+        customPath("data/state.json"),
+        JSON.stringify(secondState)
+      );
+      let reply = create10MinutesTaskReply(firstState, secondState);
+      if (reply === false) {
+        if (fs.existsSync(customPath(STATE_PATH))) {
+          fs.unlinkSync(customPath(STATE_PATH));
+        }
+        console.log("nodes ok\n\n");
+      } else {
+        fs.writeFileSync(STATE_PATH, JSON.stringify(secondState));
+        // botContext(botId, reply);
+        console.log("reply from task run: ", reply);
+        return reply;
+      }
+    } catch (err) {
+      console.log("error running task");
+      console.log(err);
     }
   } else {
-    // Monitor and Preps files dont exists so we dont run the check
+    // no node has been added to list of monitored nodes
     console.log(
-      "monitor.json and preps.json file havent been created, bypassing cron check"
+      "No nodes have been added to monitored list, bypassing recursive task"
     );
+  }
+  return null;
+}
+
+function nodeVersionIsLatest(node, latestVersion) {
+  //
+}
+function getLatestVersion(dockerTags) {
+  //
+}
+
+async function compareGoloopVersionsTask(alarm = false) {
+  // this task will run once every hour to check if the node goloop version
+  // is up to date
+  let db = model.readDb();
+  let alarmState = alarm;
+  let reply = "Goloop version check on all monitored nodes.\n\n";
+  let result = {
+    version: null,
+    nodes: []
+  };
+  console.log(db);
+
+  if (
+    db.monitored.length > 0 &&
+    db.report.length > 0 &&
+    db.versionCheck === true
+  ) {
+    // if there are nodes to monitor and people to report and versionCheck is on
+
+    let dockerImageVersions = await getGoloopImageTags();
+    let latestVersion = lib.getLatestVersion(dockerImageVersions);
+    result.version = latestVersion;
+    reply += `Goloop docker image version: ${result.version}\n\n`;
+
+    for (let eachNode of db.monitored) {
+      let nodeDataWithVersion = await getNodeGoloopVersion(eachNode);
+      result.nodes.push(nodeDataWithVersion);
+      reply += `Node name: ${nodeDataWithVersion.name}\nNode IP: ${nodeDataWithVersion.ip}\nNode goloop version: ${nodeDataWithVersion.version}\n\n`;
+    }
+
+    for (let eachNode of result.nodes) {
+      // TODO: this is the logic to set the alarm on, if the docker version of
+      // goloop (result.version) is not the same as the goloop version of all
+      // the nodes (eachNode.version) then we set 'alarmState = true'.
+      // this might fail if the version tag is 'latest' or if the version
+      // is a patch (i.e 'v1.2.3-e3a15f0')
+      if (result.version != eachNode.version) {
+        alarmState = true;
+      }
+    }
+  } else {
+    console.log(
+      "Skipping version check. either no nodes or people to report has been added"
+    );
+    if (db.monitored > 0) {
+      // if there are nodes but no people to report
+    } else {
+      // if there are people to report but no nodes
+    }
+    return null;
+  }
+  // uncomment the below line for testing the function
+  // alarmState = true;
+  //
+  if (alarmState === false) {
+    return null;
+  } else {
+    return reply;
+  }
+
+  // this next line of code should never happen
+  throw "ERROR: error in the code logic of compareGoloopVersionsTask()";
+}
+
+async function recursiveTask(task, sendMsgHandler, interval) {
+  let db = model.readDb();
+  if (db.report.length > 0) {
+    console.log(
+      `Running recursive task every ${interval} ms. Users to report for this task are: `,
+      db.report
+    );
+    let taskResult = await task();
+    sendMsgHandler(taskResult);
+  } else {
+    console.log("No users added to the report list, skipping recursive task");
   }
 }
 
-exports.checkMonitoredNodesTask = checkMonitoredNodesTask;
-exports.INTERVALS = INTERVALS;
+module.exports = {
+  checkMonitoredNodesTask: checkMonitoredNodesTask,
+  INTERVALS: INTERVALS,
+  compareGoloopVersionsTask: compareGoloopVersionsTask,
+  recursiveTask: recursiveTask
+};

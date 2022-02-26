@@ -1,57 +1,36 @@
 // imports
 const { Scenes } = require("telegraf");
-const { customPath } = require("../services");
+const { customPath, lib } = require("../services");
+const { model } = require("../model");
+
 const fs = require("fs");
 
-const STRINGS = JSON.parse(fs.readFileSync(customPath("data/strings.json")));
-
-const MONITOR_PATH = "data/monitor.json";
+const STRINGS = model.getStrings();
 
 // Functions
-function updateMonitorFile(update) {
-  try {
-    fs.writeFileSync(customPath(MONITOR_PATH), JSON.stringify(update));
-  } catch (err) {
-    console.log("error while updating monitor.json");
-    console.log(err);
+function addEachUserToReply(msg, listOfUsers) {
+  let reply = msg;
+  for (let userToReport of listOfUsers) {
+    reply += `@${userToReport.username}\n\n`;
   }
+  return reply;
 }
 
-function initializeSession(node = null, nodesArray) {
-  let session = {
-    hasInitialized: true,
-    monitored: [],
-    nodes: nodesArray
-  };
-  if (node !== null) {
-    session.monitored.push(node);
-  }
-  return session;
-}
-
-function removeNodeFromMonitoredByIp(ip, monitoredArray) {
-  let newMonitoredArray = [];
-  monitoredArray.forEach(node => {
-    if (node.ip === ip) {
-      //do nothing
-    } else {
-      newMonitoredArray.push(node);
-    }
-  });
-
-  return newMonitoredArray;
-}
-
-function validateIp(ip) {
-  let regex = new RegExp("^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(.|$)){4}$");
-
-  return regex.test(ip);
-}
 // Bot wizard scene
 const addNodeWizard = new Scenes.WizardScene(
   STRINGS.actions.add.label,
   ctx => {
     // Wizard step 1
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    if (
+      ctx.from.id != ctx.session.db.admin.id &&
+      ctx.session.db.state.locked === true
+    ) {
+      ctx.reply(
+        "Bot is currently locked and only the bot admin is allowed to add or remove nodes from the monitored list."
+      );
+      return ctx.scene.leave();
+    }
     ctx.reply("enter a name for the node you want to monitor");
     ctx.wizard.state.data = {};
     return ctx.wizard.next();
@@ -68,38 +47,17 @@ const addNodeWizard = new Scenes.WizardScene(
   },
   async ctx => {
     // Wizard step 3
-    let parsedPreps = [];
-    // try {
-    //   parsedPreps = await getPreps(ctx.message.text);
-    // } catch (err) {
-    //   console.log("error:");
-    //   console.log(err);
-    // }
 
-    if (!validateIp(ctx.message.text)) {
+    if (!lib.validateIp(ctx.message.text)) {
       ctx.reply("Please enter valid IP address");
       return;
     }
 
+    // update db
     ctx.wizard.state.data.ip = ctx.message.text;
-    if (ctx.session.hasInitialized === true) {
-      ctx.session.monitored.push({
-        name: ctx.wizard.state.data.name,
-        ip: ctx.wizard.state.data.ip
-      });
-    } else {
-      ctx.session = initializeSession(
-        {
-          name: ctx.wizard.state.data.name,
-          ip: ctx.wizard.state.data.ip
-        },
-        parsedPreps //This is an error cuz is an empty array
-      );
-    }
-    updateMonitorFile(ctx.session);
-    ctx.reply(
-      `You have successfully added a node.\nNode name: ${ctx.wizard.state.data.name}\nNode IP: ${ctx.wizard.state.data.ip}`
-    );
+    let reply = model.updateDbMonitored(ctx.wizard.state.data, "ADD");
+
+    ctx.reply(reply);
     return ctx.scene.leave();
   }
 );
@@ -107,47 +65,47 @@ const editNodesWizard = new Scenes.WizardScene(
   STRINGS.actions.edit.label,
   ctx => {
     // Wizard step 1
-    if (ctx.session.hasInitialized === true) {
-      // If nodes have been added to be monitored show them and ask user
-      // to select one
-      let reply =
-        "Please reply with the ip of the node you want to remove:\n\n";
-      for (let node of ctx.session.monitored) {
-        reply = reply + `Node name: ${node.name}\nNode ip: ${node.ip}\n\n`;
-      }
-      ctx.reply(reply);
-    } else {
-      // if no node have been added print message and leave wizard
-      ctx.reply(STRINGS.msg2);
+    // Load db
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    if (
+      ctx.session.db.state.locked === true &&
+      ctx.from.id != ctx.session.db.admin.id
+    ) {
+      // Bot admin is the only one that can delete nodes from monitoring
+      ctx.reply(
+        `Only the bot admin can edit the list of nodes being monitored, currently the bot admin is @${ctx.session.db.admin.username}. Contact bot admin if you want to edit the list of nodes being monitored.`
+      );
       return ctx.scene.leave();
+    } else {
+      // the bot state is not locked and the current user is anyone, or the bot
+      // is locked and the current user is the admin
+      // either way the current user can edit the list of nodes
+      //
+      if (ctx.session.db.monitored.length > 0) {
+        // If nodes have been added to be monitored show them and ask user
+        // to select one
+        let reply =
+          "Please reply with the ip or name of the node you want to remove:\n\n";
+        for (let node of ctx.session.db.monitored) {
+          reply += `Node name: ${node.name}\nNode ip: ${node.ip}\n\n`;
+        }
+        ctx.reply(reply);
+      } else {
+        // if no node have been added print message and leave wizard
+        ctx.reply(STRINGS.msg2);
+        return ctx.scene.leave();
+      }
     }
-    // put here the logic of showing the nodes to then delete
     return ctx.wizard.next();
   },
   ctx => {
     // Wizard step 2
-    let removeNode = false;
-    for (let node of ctx.session.monitored) {
-      if (node.ip === ctx.message.text) {
-        removeNode = true;
-      }
-    }
-    if (removeNode) {
-      // remove node
-      ctx.session.monitored = removeNodeFromMonitoredByIp(
-        ctx.message.text,
-        ctx.session.monitored
-      );
-      let reply = "You have successfully removed the node.";
-      ctx.reply(reply);
-    } else {
-      // if the ip send by the user is not on the list of monitored
-      ctx.reply("The ip you entered doesnt match the list of monitored nodes");
-    }
-    if (ctx.session.monitored.length === 0) {
-      ctx.session.hasInitialized = false;
-    }
-    updateMonitorFile(ctx.session);
+
+    // TODO: maybe find a better solution than setting both data.name and
+    // data.ip equal to ctx.message.text
+    ctx.wizard.state.data = { name: ctx.message.text, ip: ctx.message.text };
+    let reply = model.updateDbMonitored(ctx.wizard.state.data, "DELETE");
+    ctx.reply(reply);
     return ctx.scene.leave();
   }
 );
@@ -156,10 +114,11 @@ const checkNodesWizard = new Scenes.WizardScene(
   STRINGS.actions.check.label,
   ctx => {
     // Wizard step 1
-    if (ctx.session.hasInitialized === true) {
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    if (ctx.session.db.monitored.length > 0) {
       let reply = "Nodes being monitored:\n\n";
-      for (let node of ctx.session.monitored) {
-        reply = reply + `Node name: ${node.name}\nNode ip: ${node.ip}\n\n`;
+      for (let node of ctx.session.db.monitored) {
+        reply += `Node name: ${node.name}\nNode ip: ${node.ip}\n\n`;
       }
       ctx.reply(reply);
     } else {
@@ -168,7 +127,99 @@ const checkNodesWizard = new Scenes.WizardScene(
     return ctx.scene.leave();
   }
 );
-
-exports.addNodeWizard = addNodeWizard;
-exports.editNodesWizard = editNodesWizard;
-exports.checkNodesWizard = checkNodesWizard;
+const addTaskWizard = new Scenes.WizardScene(
+  STRINGS.actions.add_task.label,
+  ctx => {
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    if (
+      ctx.from.id != ctx.session.db.admin.id &&
+      ctx.session.db.state.locked === true
+    ) {
+      ctx.reply(
+        "Bot is currently locked and only the bot admin is allowed to add or remove users from the monitored list."
+      );
+      return ctx.scene.leave();
+    }
+    ctx.reply(
+      "Because of limitations with how Telegram bots work, to add a user to the list of entities that will get node status report, is necessary to send the command '/addMeToReport' via private chat to the bot or by the bot admin in a chat group using '/addGroupToReport'."
+    );
+    return ctx.scene.leave();
+  }
+);
+const editTaskWizard = new Scenes.WizardScene(
+  STRINGS.actions.edit_task.label,
+  ctx => {
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    ctx.session.loop = 0;
+    if (
+      ctx.session.db.state.locked === true &&
+      ctx.from.id != ctx.session.db.admin.id
+    ) {
+      // Bot admin is the only one that can delete nodes from monitoring
+      ctx.reply(
+        `The bot is currently locked and only the bot admin can edit the list of users in the report list, currently the bot admin is @${ctx.session.db.admin.username}. Contact bot admin if you want to edit the list.`
+      );
+      return ctx.scene.leave();
+    } else {
+      // the bot state is not locked and the current user is anyone, or the bot
+      // is locked and the current user is the admin
+      // either way the current user can edit the list of nodes
+      if (ctx.session.db.report.length > 0) {
+        // If users have been added to to the report list show them and ask user
+        // to select one or more of them to delete
+        let reply = "";
+        reply += addEachUserToReply(STRINGS.msg6, ctx.session.db.report);
+        ctx.reply(reply);
+      } else {
+        // if no user has been added to the list
+        ctx.reply(STRINGS.msg5);
+        return ctx.scene.leave();
+      }
+    }
+    return ctx.wizard.next();
+  },
+  ctx => {
+    let usersToRemove = ctx.message.text;
+    if (lib.validateUserList(usersToRemove) === false) {
+      // if the input is not a valid list of users separated by spaces
+      ctx.reply(
+        "The previous input is not valid, telegram usernames must be at least 5 characters long and can only contain letters, numbers and underscore ([a-z][0-9]_).\n\nPlease send one or more users separated by spaces (i.e '@user1 @user2')"
+      );
+      ctx.session.loop += 1;
+      if (ctx.session.loop > 5) {
+        return ctx.scene.leave();
+      } else {
+        return;
+      }
+    } else {
+      // if the list of users is valid, check their existance in the report list
+      // and remove them
+      let reply = model.removeUsersFromDbReport(ctx.message.text);
+      ctx.reply(reply);
+    }
+    return ctx.scene.leave();
+  }
+);
+const checkTaskWizard = new Scenes.WizardScene(
+  STRINGS.actions.check_task.label,
+  ctx => {
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    let reply = "";
+    if (ctx.session.db.report.length > 0) {
+      reply += addEachUserToReply(STRINGS.msg7, ctx.session.db.report);
+      ctx.reply(reply);
+    } else {
+      ctx.reply(STRINGS.msg5);
+    }
+    return ctx.scene.leave();
+  }
+);
+module.exports = {
+  addNodeWizard: addNodeWizard,
+  editNodesWizard: editNodesWizard,
+  checkNodesWizard: checkNodesWizard,
+  addTaskWizard: addTaskWizard,
+  editTaskWizard: editTaskWizard,
+  checkTaskWizard: checkTaskWizard,
+  addEachUserToReply: addEachUserToReply
+};

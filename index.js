@@ -3,72 +3,52 @@ require("dotenv").config();
 const { Telegraf, session, Markup, Scenes } = require("telegraf");
 const fs = require("fs");
 const { botCommands, botReplyMaker, customScenes } = require("./bot");
-const { syncGetPreps, customPath, tasks } = require("./services");
+const { customPath, tasks } = require("./services");
+const { model } = require("./model");
 
 // global constants
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const GROUP_ID = process.env.GROUP_ID;
-const STRINGS = JSON.parse(fs.readFileSync(customPath("data/strings.json")));
-let PREPS = [];
-try {
-  if (fs.existsSync(customPath("data/preps.json"))) {
-    // if the file 'data/preps.json' exists
-    PREPS = JSON.parse(fs.readFileSync(customPath("/data/preps.json")));
-  } else {
-    // if it doesnt exists, create it
-    syncGetPreps("./data/preps.json");
-    PREPS = JSON.parse(fs.readFileSync(customPath("/data/preps.json")));
-  }
-} catch (err) {
-  // if there is some error processing the 'data/preps.json' file
-  // this throw statement will kill the program because it will be
-  // an unhandle exception
-  throw "Error while processing 'data/preps.json' file";
+const STRINGS = model.getStrings();
+const _DB_ = "data/db.json";
+
+if (!BOT_TOKEN || BOT_TOKEN == null) {
+  throw "Critical error, there is no bot auth token on '.env' file.";
 }
 
 // Functions
-function initializeSession(node = null) {
-  let session = {
-    hasInitialized: true,
-    monitored: []
-  };
-  if (node !== null) {
-    session.monitored.push(node);
+function replyWrapper(botContext, msg) {
+  // this is a wrapper on the ctx.reply() bot method, it checks if the message
+  // being send is valid (not null and a valid string) and sends it.
+  if (typeof msg === "string") {
+    botContext.reply(msg);
+  } else {
+    console.log(
+      `error while sending message with the bot. type of message ${typeof msg} content of message: `,
+      msg
+    );
+    botContext.reply(
+      `Unexpected error while sending reply, bot sent message of type ${typeof msg} and only 'strings' are allowed`
+    );
   }
-  return session;
 }
-
-// Bot wizard scene
-const addNodeWizard = customScenes.addNodeWizard;
-const checkNodesWizard = customScenes.checkNodesWizard;
-const editNodesWizard = customScenes.editNodesWizard;
-
 // creating new Bot instance
-const espaniconBot = new Telegraf(BOT_TOKEN);
+const iconNodeMonitorBot = new Telegraf(BOT_TOKEN);
 const stage = new Scenes.Stage([
-  addNodeWizard,
-  checkNodesWizard,
-  editNodesWizard
+  customScenes.addNodeWizard,
+  customScenes.checkNodesWizard,
+  customScenes.editNodesWizard,
+  customScenes.addTaskWizard,
+  customScenes.editTaskWizard,
+  customScenes.checkTaskWizard
 ]);
-espaniconBot.use(session());
-espaniconBot.use(stage.middleware());
+iconNodeMonitorBot.use(session());
+iconNodeMonitorBot.use(stage.middleware());
 
 // Bot actions
-espaniconBot.action(STRINGS.actions.add.tag, (ctx, next) => {
-  ctx.scene.enter(STRINGS.actions.add.label);
-});
-espaniconBot.action(STRINGS.actions.check.tag, (ctx, next) => {
-  ctx.scene.enter(STRINGS.actions.check.label);
-});
-espaniconBot.action(STRINGS.actions.edit.tag, (ctx, next) => {
-  ctx.scene.enter(STRINGS.actions.edit.label);
-});
-
-// bot commands
-// start command
-espaniconBot.command("start", ctx => {
+// BEGIN NODES BUTTON STRUCTURE
+iconNodeMonitorBot.action(STRINGS.actions.nodes.tag, (ctx, next) => {
   ctx.reply(
-    STRINGS.msg1,
+    STRINGS.msg3,
     Markup.inlineKeyboard([
       Markup.button.callback(STRINGS.actions.add.msg, STRINGS.actions.add.tag),
       Markup.button.callback(
@@ -82,83 +62,259 @@ espaniconBot.command("start", ctx => {
     ])
   );
 });
-// /info command
-espaniconBot.command("/info", ctx => {
-  ctx.reply(STRINGS.infoCmdString);
+iconNodeMonitorBot.action(STRINGS.actions.add.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.add.label);
 });
-// /checkMonitoredAndBlockProducersHeight command
-espaniconBot.command("checkMonitoredAndBlockProducersHeight", async ctx => {
-  if (ctx.session.hasInitialized === true) {
-    let data = await botCommands.checkMonitoredAndBlockProducersHeight(
-      PREPS.NODES_ARRAY,
-      ctx.session.monitored
-    );
+iconNodeMonitorBot.action(STRINGS.actions.check.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.check.label);
+});
+iconNodeMonitorBot.action(STRINGS.actions.edit.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.edit.label);
+});
+// END NODES BUTTON STRUCTURE
 
-    let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
-    ctx.reply(reply);
-  } else {
-    ctx.reply(STRINGS.msg2);
+// BEGIN REPORT BUTTON STRUCTURE
+iconNodeMonitorBot.action(STRINGS.actions.task.tag, (ctx, next) => {
+  ctx.reply(
+    STRINGS.msg4,
+    Markup.inlineKeyboard([
+      Markup.button.callback(
+        STRINGS.actions.add_task.msg,
+        STRINGS.actions.add_task.tag
+      ),
+      Markup.button.callback(
+        STRINGS.actions.edit_task.msg,
+        STRINGS.actions.edit_task.tag
+      ),
+      Markup.button.callback(
+        STRINGS.actions.check_task.msg,
+        STRINGS.actions.check_task.tag
+      )
+    ])
+  );
+});
+iconNodeMonitorBot.action(STRINGS.actions.add_task.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.add_task.label);
+});
+iconNodeMonitorBot.action(STRINGS.actions.check_task.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.check_task.label);
+});
+iconNodeMonitorBot.action(STRINGS.actions.edit_task.tag, (ctx, next) => {
+  ctx.scene.enter(STRINGS.actions.edit_task.label);
+});
+// END REPORT BUTTON STRUCTURE
+
+// bot commands
+// /test command
+// iconNodeMonitorBot.command("/test", async ctx => {
+//   let commands = await ctx.telegram.botCommandsScopeChat;
+//   console.log(commands);
+// });
+// start command
+iconNodeMonitorBot.command("start", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  ctx.replyWithMarkdownV2(
+    STRINGS.msg1,
+    Markup.inlineKeyboard([
+      Markup.button.callback(
+        STRINGS.actions.nodes.msg,
+        STRINGS.actions.nodes.tag
+      ),
+      Markup.button.callback(STRINGS.actions.task.msg, STRINGS.actions.task.tag)
+    ])
+  );
+});
+// /info command
+iconNodeMonitorBot.command("/info", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  replyWrapper(ctx, STRINGS.infoCmdString);
+});
+// /addMeToReport command
+iconNodeMonitorBot.command("/addMeToReport", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let reply = botCommands.addMeToReport(ctx.from);
+  replyWrapper(ctx, reply);
+});
+// /addGroupToReport Command
+// TODO: verify that the message is being send from a group and not from a
+// private chat, currently if a user send this message from a private chat
+// the bot will try to add the user to the report list and there might be
+// bugs with that
+iconNodeMonitorBot.command("/addGroupToReport", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let reply = botCommands.addGroupToReport(ctx.chat, ctx.from);
+  replyWrapper(ctx, reply);
+});
+// /unlock command
+iconNodeMonitorBot.command("/unlock", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let reply = botCommands.unlock(ctx.from);
+  replyWrapper(ctx, reply);
+});
+// /lock command
+iconNodeMonitorBot.command("/lock", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let reply = botCommands.lock(ctx.from);
+  replyWrapper(ctx, reply);
+});
+// /testReport command
+iconNodeMonitorBot.command("/testReport", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let reply = botCommands.testReport(db);
+  for (let eachUser of db.report) {
+    ctx.telegram.sendMessage(eachUser.id, reply);
   }
 });
+// /showListOfMonitored command. maybe an unnecesary command?
+iconNodeMonitorBot.command("/showListOfMonitored", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let reply = botCommands.showListOfMonitored(db);
+  replyWrapper(ctx, reply);
+});
+// /summary command
+iconNodeMonitorBot.command("/summary", async ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let reply = await botCommands.summary(db);
+  replyWrapper(ctx, reply);
+});
+// /versionCheck {start || stop || pause} command
+iconNodeMonitorBot.hears(/^(\/\w+\s+(start|stop|run))$/, async ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  let command = ctx.message.text.split(" ");
+  let reply = null;
+
+  if (db.monitored.length > 0) {
+    if (command[1] === "run") {
+      // anyone can send '/versionCheck run' commands
+      reply = await tasks.compareGoloopVersionsTask(true);
+    } else if (command[1] === "start" || command[1] === "stop") {
+      // check if the user is the bot admin or if the bot admin is unlocked
+      if (
+        ctx.from.id != ctx.session.db.admin.id &&
+        ctx.session.db.state.locked === true
+      ) {
+        reply =
+          "The bot is currently locked and only the bot admin can send '/versionCheck stop' and '/versionCheck start' commands";
+      } else {
+        if (command[1] === "start") {
+          model.versionCheckStatus("start"); // this changes the versionCheck status
+          reply =
+            "Version check status: On\n\nRecursive check that runs every hour to verify the version of the node is running.";
+        } else if (command[1] === "stop") {
+          model.versionCheckStatus("stop"); // this changes the versionCheck status
+          reply =
+            "Version check status: Off\n\nRecursive check that runs every hour to verify the version of the node is not running.";
+        } else {
+          // this condition should never happen because the regex should only match
+          // start || stop || pause || run
+        }
+      }
+    } else {
+      reply =
+        "Unrecognized flag sent with /versionCheck command. /versionCheck can only be sent with either 'start', 'stop' or 'run' as a flag";
+    }
+  } else {
+    reply =
+      "There are no nodes added to monitored list, please send '/start' command to add a node before running '/versionCheck' command";
+  }
+
+  replyWrapper(ctx, reply);
+});
+// /checkMonitoredAndBlockProducersHeight command
+iconNodeMonitorBot.command(
+  "/checkMonitoredAndBlockProducersHeight",
+  async ctx => {
+    ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+    ctx.reply("Running check, please wait a few seconds...");
+    const data = await botCommands.checkMonitoredAndBlockProducersHeight();
+    const reply = botReplyMaker.makeNodesHeightAndGapReply(data);
+    replyWrapper(ctx, reply);
+  }
+);
 // /updatePrepsList command
-espaniconBot.command("/updatePrepsList", ctx => {
-  botCommands.updatePrepsList();
-  ctx.reply("List of Preps was updated");
+iconNodeMonitorBot.command("/updatePrepsList", async ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  ctx.reply("Running check, please wait a few seconds...");
+  let reply = await botCommands.updatePrepsList();
+  replyWrapper(ctx, reply);
 });
 // /showListOfPreps command
-espaniconBot.command("/showListOfPreps", ctx => {
+iconNodeMonitorBot.command("/showListOfPreps", ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  reply = null;
   let data = botCommands.showListOfPreps();
-  let reply = botReplyMaker.makeUpdateListOfPrepsReply(data);
-  ctx.reply(reply);
+  console.log("data: ", data);
+  if (data == null) {
+    reply =
+      "In order to get the list of Preps you need to first add at least one node to monitor, send '/start' command to add a node";
+  } else {
+    reply = botReplyMaker.makeUpdateListOfPrepsReply(data);
+  }
+  replyWrapper(ctx, reply);
 });
 
 // /checkBlockProducersHeight command
-espaniconBot.command("checkBlockProducersHeight", async ctx => {
-  if (ctx.session.hasInitialized === true) {
-    let data = await botCommands.checkBlockProducersHeight(PREPS.NODES_ARRAY);
-
-    let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
-    ctx.reply(reply);
-  } else {
-    ctx.reply(STRINGS.msg2);
-  }
+iconNodeMonitorBot.command("checkBlockProducersHeight", async ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  ctx.reply("Running check, please wait a few seconds...");
+  let data = await botCommands.checkBlockProducersHeight();
+  let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
+  replyWrapper(ctx, reply);
 });
 // /checkMonitoredHeight command
-espaniconBot.command("checkMonitoredNodesHeight", async ctx => {
-  if (ctx.session.hasInitialized === true) {
-    let data = await botCommands.checkMonitoredNodesHeight(
-      ctx.session.monitored
-    );
-
-    let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
-    ctx.reply(reply);
-  } else {
-    ctx.reply(STRINGS.msg2);
-  }
+iconNodeMonitorBot.command("checkMonitoredNodesHeight", async ctx => {
+  ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
+  ctx.reply("Running check, please wait a few seconds...");
+  let data = await botCommands.checkMonitoredNodesHeight();
+  let reply = botReplyMaker.makeNodesHeightAndGapReply(data);
+  replyWrapper(ctx, reply);
 });
 
 // Running the bot
-espaniconBot.launch();
+iconNodeMonitorBot.launch();
 
 // Function to send message to TG group
-function botSendMsgFunction(groupId, reply) {
-  espaniconBot.telegram.sendMessage(groupId, reply);
+function botSendMsgFunction(taskResult) {
+  let db = model.readDb();
+  if (taskResult == null) {
+    // do nothing
+    console.log("Task result: Skipping message to all users");
+  } else {
+    if (db.report.length > 0) {
+      for (let eachUserToReport of db.report) {
+        iconNodeMonitorBot.telegram.sendMessage(
+          eachUserToReport.id,
+          taskResult
+        );
+      }
+    }
+  }
 }
 
-// Running recursive check with setTimeout
-function runEveryMinute() {
-  tasks.checkMonitoredNodesTask(
+// Running recursive version check every hour
+async function runEveryHour() {
+  tasks.recursiveTask(
+    tasks.compareGoloopVersionsTask,
     botSendMsgFunction,
-    GROUP_ID,
-    botCommands.checkMonitoredAndBlockProducersHeight
+    tasks.INTERVALS.oneHour
   );
-
+  setTimeout(runEveryHour, tasks.INTERVALS.oneHour);
+}
+// Running recursive block check every minute
+async function runEveryMinute() {
+  tasks.recursiveTask(
+    tasks.checkMonitoredNodesTask,
+    botSendMsgFunction,
+    tasks.INTERVALS.oneMinute
+  );
   setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
 }
+
+// recursive tasks
 setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
+setTimeout(runEveryHour, tasks.INTERVALS.oneHour);
 
 // Catching uncaught exceptions
-//
 function isTelegramErrorType(error) {
   try {
     let constructorString = error.constructor.toString();
@@ -171,14 +327,16 @@ function isTelegramErrorType(error) {
     console.log("Error while getting constructor", err);
   }
 }
+
+// TODO: can also implement bot.catch(err => {})
 process.on("uncaughtException", err => {
   let killApp = true;
   if (isTelegramErrorType(err)) {
-    console.log(
-      "Unexpected error of type 'TelegramError'. Make sure the GROUP_ID value is valid in the '.env' file\n",
-      err
-    );
+    console.log("Unexpected error of type 'TelegramError'.", err);
     killApp = true;
+  } else {
+    console.log("uncaughtException : ", err);
+    process.exit(1);
   }
   if (killApp) {
     process.exit(1);
@@ -186,5 +344,5 @@ process.on("uncaughtException", err => {
 });
 
 // Enable graceful stop
-process.once("SIGINT", () => espaniconBot.stop("SIGINT"));
-process.once("SIGTERM", () => espaniconBot.stop("SIGTERM"));
+process.once("SIGINT", () => iconNodeMonitorBot.stop("SIGINT"));
+process.once("SIGTERM", () => iconNodeMonitorBot.stop("SIGTERM"));
