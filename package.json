@@ -1,6 +1,6 @@
 {
   "name": "icon-node-monitor",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "bot for checking the block sync of an ICON node",
   "main": "index.js",
   "scripts": {
