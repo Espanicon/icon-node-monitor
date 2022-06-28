@@ -28,13 +28,13 @@ function readDb() {
 
 // Global constants
 //
-const NODES = ["ctz.solidwallet.io", "api.icon.geometry.io"];
+const NODES = ["ctz.solidwallet.io", "api.icon.geometry.io"]; //geometry deprecated
 const PARAMS = {
   path: "/admin/chain/0x1",
   port: 9000
 };
 const PARAMS2 = {
-  hostname: NODES[1],
+  hostname: NODES[0],
   path: "/api/v3",
   method: "POST",
   headers: {
