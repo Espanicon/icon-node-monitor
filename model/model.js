@@ -2,6 +2,7 @@
 const fs = require("fs");
 const customPath = require("../services/customPath.js");
 const syncGetPreps = require("../services/syncGetPreps.js");
+const networkProposals = require("../api/networkProposals.js");
 const lib = require("../services/lib.js");
 
 const _DB_ = "data/db.json";
@@ -21,7 +22,8 @@ function dbInitState() {
     report: [],
     admin: { id: null, username: null },
     state: { locked: false },
-    versionCheck: true
+    versionCheck: true,
+    lastProposalId: null
   };
 }
 function getStrings() {
@@ -243,6 +245,147 @@ function versionCheckStatus(statusString) {
   writeDb(db);
 }
 
+///////////////////////NETWORK PROPOSALS METHODS
+async function getLastBlock() {
+  return await networkProposals.getLastBlock();
+}
+async function getPreps(height = null) {
+  const postData = networkProposals.makePostData(
+    "getPReps",
+    { startRanking: "0x1" },
+    height
+  );
+  const request = await networkProposals.customHttpsRequest(
+    networkProposals.GLOBAL.routes.v3,
+    postData
+  );
+  return request.result.preps;
+  // try {
+  //   const parsedRequest = JSON.parse(request);
+  //   return parsedRequest.result.preps;
+  // } catch (err) {
+  //   console.log("error on getPreps request response");
+  //   console.log(`response: ${request}.`);
+  //   console.error(err);
+  //   return [];
+  // }
+}
+
+async function getProposals() {
+  const request = await networkProposals.customHttpsRequest(
+    networkProposals.GLOBAL.routes.proposals,
+    false,
+    networkProposals.GLOBAL.node.tracker
+  );
+  return request;
+}
+
+async function getProposalSummaryById(id) {
+  const proposals = await getProposals();
+  let proposalFromId = null;
+  let summaryResponse = {};
+
+  for (let proposal of proposals) {
+    if (proposal.id === id) {
+      proposalFromId = proposal;
+    }
+  }
+
+  // early null return if no id matches any proposal
+  if (proposalFromId === null) return null;
+
+  // get all preps at given block height
+  const prepsAtHeight = await getPreps(proposalFromId.start_block_height);
+  // const prepsAtHeight = await getPreps(146841895);
+  const prepsSummary = prepsAtHeight
+    .filter(prep => {
+      if (prep.grade !== "0x0") {
+        return false;
+      }
+      return true;
+    })
+    .map(prep => ({
+      name: prep.name,
+      address: prep.address
+    }));
+
+  return { prepsToVote: prepsSummary, ...proposalFromId };
+}
+
+async function checkForNewProposals(lastProposalId) {
+  const proposals = await getProposals();
+  let indexOfLastProposal = null;
+
+  for (let index = 0; index < proposals.length; index++) {
+    if (proposals[index].id === lastProposalId) {
+      indexOfLastProposal = index;
+    }
+  }
+
+  // early null return
+  if (indexOfLastProposal === null) return null;
+
+  if (proposals.slice(indexOfLastProposal).length === 1) {
+    return null;
+  } else {
+    return proposals.slice(indexOfLastProposal + 1);
+  }
+}
+
+async function getNewProposalsSummary(lastProposalId) {
+  let newProposals = await checkForNewProposals(lastProposalId);
+  let newProposalsSummary = [];
+
+  if (newProposals === null) return null;
+
+  for (let proposal of newProposals) {
+    const proposalSummary = await getProposalSummaryById(proposal.id);
+    newProposalsSummary.push(proposalSummary);
+  }
+
+  return newProposalsSummary;
+}
+
+async function parseNewProposalsSummary(arrayOfProposals) {
+  if (arrayOfProposals === null) {
+    return "No new proposals.";
+  } else {
+    const lastBlock = await networkProposals.getLastBlock();
+    let response =
+      "New Proposals Summary:\n" +
+      `Current block height: ${lastBlock}` +
+      "\n\n";
+
+    let breakLine = "---------------------\n";
+    response += breakLine;
+
+    for (let proposal of arrayOfProposals) {
+      response +=
+        `Proposal title: ${proposal.title}` +
+        "\n" +
+        `Proposer name: ${proposal.proposer_name}` +
+        "\n\n" +
+        `Proposal begin (block height): ${proposal.start_block_height}` +
+        "\n\n" +
+        `Proposal ends (block height): ${proposal.end_block_height}` +
+        "\n\n" +
+        "Preps to vote:\n";
+
+      for (let prep of proposal.prepsToVote) {
+        response +=
+          `Prep name: ${prep.name}` +
+          "\n" +
+          `Prep address: ${prep.address}` +
+          "\n";
+      }
+
+      response += "\n" + breakLine;
+    }
+
+    return response;
+  }
+}
+
 module.exports = {
   readDb: readDb,
   writeDb: writeDb,
@@ -258,5 +401,12 @@ module.exports = {
   readDbAndCheckForAdmin: readDbAndCheckForAdmin,
   lock: lock,
   unlock: unlock,
-  versionCheckStatus: versionCheckStatus
+  versionCheckStatus: versionCheckStatus,
+  getLastBlock: getLastBlock,
+  getPreps: getPreps,
+  getProposals: getProposals,
+  getProposalSummaryById: getProposalSummaryById,
+  checkForNewProposals: checkForNewProposals,
+  getNewProposalsSummary: getNewProposalsSummary,
+  parseNewProposalsSummary: parseNewProposalsSummary
 };

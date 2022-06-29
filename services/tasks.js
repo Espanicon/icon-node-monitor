@@ -27,7 +27,8 @@ const INTERVALS = {
   oneSecond: 1000,
   oneMinute: 60000,
   tenMinutes: 600000,
-  oneHour: 3600000
+  oneHour: 3600000,
+  oneDay: 86400000
 };
 
 function setAlarmState(data) {
@@ -199,6 +200,48 @@ async function compareGoloopVersionsTask(alarm = false) {
   throw "ERROR: error in the code logic of compareGoloopVersionsTask()";
 }
 
+async function checkNetworkProposals() {
+  // get block height,
+  // get proposals
+  // get last proposal id in db
+  //
+  const lastBlockInNetwork = await model.getLastBlock();
+  const proposals = await model.getProposals();
+
+  if (lastBlockInNetwork === null || proposals === null) {
+    console.log("error running checkNetworkProposals task");
+    return null;
+  }
+  let db = model.readDb();
+  const lastProposalIdInDb = db.lastProposalId;
+
+  // get how many new proposals there are (returns array)
+  const newProposalsInNetwork = await model.getNewProposalsSummary(
+    lastProposalIdInDb
+  );
+  console.log("new proposals");
+  console.log(newProposalsInNetwork);
+  if (newProposalsInNetwork === null) {
+    // if newProposalsInNetwork === null there are no new proposals, so
+    // we return null
+    return null;
+  }
+
+  //// if there are any new proposals check end block of last proposal
+  //// if end block is higher than current block, set last proposal id
+  //// in db equal to last proposal on network
+  const lastProposalInNetworkBlockHeight = newProposalsInNetwork.slice(-1)
+    .end_block_height;
+  if (lastProposalInNetworkBlockHeight > lastBlockInNetwork) {
+    db.lastProposalId = newProposalsInNetwork.slice(-1).id;
+    model.writeDb(db);
+    return `Proposal "${newProposalsInNetwork.slice(-1).title}" has ended.`;
+  }
+  //// if end block is not higher than current block print proposal info
+  const reply = await model.parseNewProposalsSummary(newProposalsInNetwork);
+  return reply;
+}
+
 async function recursiveTask(task, sendMsgHandler, interval) {
   let db = model.readDb();
   if (db.report.length > 0) {
@@ -217,5 +260,6 @@ module.exports = {
   checkMonitoredNodesTask: checkMonitoredNodesTask,
   INTERVALS: INTERVALS,
   compareGoloopVersionsTask: compareGoloopVersionsTask,
-  recursiveTask: recursiveTask
+  recursiveTask: recursiveTask,
+  checkNetworkProposals: checkNetworkProposals
 };

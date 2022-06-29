@@ -292,27 +292,38 @@ function botSendMsgFunction(taskResult) {
 }
 
 // Running recursive version check every hour
-async function runEveryHour() {
+async function runGoloopVersionTask() {
   tasks.recursiveTask(
     tasks.compareGoloopVersionsTask,
     botSendMsgFunction,
     tasks.INTERVALS.oneHour
   );
-  setTimeout(runEveryHour, tasks.INTERVALS.oneHour);
+  setTimeout(runGoloopVersionTask, tasks.INTERVALS.oneDay);
 }
 // Running recursive block check every minute
-async function runEveryMinute() {
+async function runBlockCheckTask() {
   tasks.recursiveTask(
     tasks.checkMonitoredNodesTask,
     botSendMsgFunction,
     tasks.INTERVALS.oneMinute
   );
-  setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
+  setTimeout(runBlockCheckTask, tasks.INTERVALS.oneMinute);
+}
+
+// Running recursive task to check for new proposals every hour
+async function runNetworkProposalTask() {
+  tasks.recursiveTask(
+    tasks.checkNetworkProposals,
+    botSendMsgFunction,
+    tasks.INTERVALS.oneMinute
+  );
+  setTimeout(runNetworkProposalTask, tasks.INTERVALS.oneHour);
 }
 
 // recursive tasks
-setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
-setTimeout(runEveryHour, tasks.INTERVALS.oneHour);
+setTimeout(runBlockCheckTask, tasks.INTERVALS.oneMinute);
+setTimeout(runGoloopVersionTask, tasks.INTERVALS.oneDay);
+setTimeout(runNetworkProposalTask, tasks.INTERVALS.oneHour);
 
 // Catching uncaught exceptions
 function isTelegramErrorType(error) {
