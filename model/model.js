@@ -23,7 +23,7 @@ function dbInitState() {
     admin: { id: null, username: null },
     state: { locked: false },
     versionCheck: true,
-    lastProposalId: null
+    lastBlockHeightCheckedForProposals: null
   };
 }
 function getStrings() {
@@ -250,53 +250,60 @@ async function getLastBlock() {
   return await networkProposals.getLastBlock();
 }
 async function getPreps(height = null) {
-  const postData = networkProposals.makePostData(
-    "getPReps",
-    { startRanking: "0x1" },
-    height
-  );
-  const request = await networkProposals.customHttpsRequest(
-    networkProposals.GLOBAL.routes.v3,
-    postData
-  );
-  return request.result.preps;
-  // try {
-  //   const parsedRequest = JSON.parse(request);
-  //   return parsedRequest.result.preps;
-  // } catch (err) {
-  //   console.log("error on getPreps request response");
-  //   console.log(`response: ${request}.`);
-  //   console.error(err);
-  //   return [];
-  // }
+  return await networkProposals.getPreps(height);
 }
 
-async function getProposals() {
-  const request = await networkProposals.customHttpsRequest(
-    networkProposals.GLOBAL.routes.proposals,
-    false,
-    networkProposals.GLOBAL.node.tracker
-  );
-  return request;
+function parseProposals(arrayOfProposals) {
+  let parsedProposals = [];
+  for (let proposal of arrayOfProposals) {
+    let proposalObject = {
+      ...proposal,
+      end_block_height: parseInt(proposal.endBlockHeight, 16),
+      start_block_height: parseInt(proposal.startBlockHeight, 16),
+      proposer_name: proposal.proposerName,
+      title:
+        proposal.contents.title == null ? "undefined" : proposal.contents.title,
+      type:
+        proposal.contents.type == null ? "undefined" : proposal.contents.type,
+      contents_json: {
+        ...proposal.contents
+      }
+    };
+
+    parsedProposals.push(proposalObject);
+  }
+
+  return parsedProposals;
 }
 
-async function getProposalSummaryById(id) {
-  const proposals = await getProposals();
-  let proposalFromId = null;
+async function getProposalSummaryByStartBlockHeight(
+  startBlockHeight,
+  fromTracker = false
+) {
+  let proposals;
+  if (fromTracker) {
+    proposals = await networkProposals.getProposalsFromTracker();
+  } else {
+    let rawProposals = await networkProposals.getProposals();
+    proposals = parseProposals(rawProposals);
+  }
+  let proposalFromBlockHeight = null;
   let summaryResponse = {};
 
   for (let proposal of proposals) {
-    if (proposal.id === id) {
-      proposalFromId = proposal;
+    if (proposal.start_block_height === startBlockHeight) {
+      proposalFromBlockHeight = proposal;
     }
   }
 
   // early null return if no id matches any proposal
-  if (proposalFromId === null) return null;
+  if (proposalFromBlockHeight === null) return null;
 
   // get all preps at given block height
-  const prepsAtHeight = await getPreps(proposalFromId.start_block_height);
-  // const prepsAtHeight = await getPreps(146841895);
+  const prepsAtHeight = await networkProposals.getPreps(
+    proposalFromBlockHeight.start_block_height
+  );
+  // const prepsAtHeight = await networkProposals.getPreps(146841895);
   const prepsSummary = prepsAtHeight
     .filter(prep => {
       if (prep.grade !== "0x0") {
@@ -309,37 +316,45 @@ async function getProposalSummaryById(id) {
       address: prep.address
     }));
 
-  return { prepsToVote: prepsSummary, ...proposalFromId };
+  return { prepsToVote: prepsSummary, ...proposalFromBlockHeight };
 }
 
-async function checkForNewProposals(lastProposalId) {
-  const proposals = await getProposals();
-  let indexOfLastProposal = null;
+async function checkForNewProposals(
+  lastProposalBlockHeight,
+  fromTracker = false
+) {
+  let proposals;
+  if (fromTracker) {
+    proposals = await networkProposals.getProposalsFromTracker();
+  } else {
+    let rawProposals = await networkProposals.getProposals();
+    proposals = parseProposals(rawProposals);
+  }
+  let newProposals = [];
 
   for (let index = 0; index < proposals.length; index++) {
-    if (proposals[index].id === lastProposalId) {
-      indexOfLastProposal = index;
+    if (proposals[index].start_block_height >= lastProposalBlockHeight) {
+      newProposals.push(proposals[index]);
     }
   }
 
-  // early null return
-  if (indexOfLastProposal === null) return null;
-
-  if (proposals.slice(indexOfLastProposal).length === 1) {
+  if (newProposals.length === 0) {
     return null;
   } else {
-    return proposals.slice(indexOfLastProposal + 1);
+    return newProposals;
   }
 }
 
-async function getNewProposalsSummary(lastProposalId) {
-  let newProposals = await checkForNewProposals(lastProposalId);
+async function getNewProposalsSummary(lastProposalBlockHeight) {
+  let newProposals = await checkForNewProposals(lastProposalBlockHeight);
   let newProposalsSummary = [];
 
   if (newProposals === null) return null;
 
   for (let proposal of newProposals) {
-    const proposalSummary = await getProposalSummaryById(proposal.id);
+    const proposalSummary = await getProposalSummaryByStartBlockHeight(
+      proposal.start_block_height
+    );
     newProposalsSummary.push(proposalSummary);
   }
 
@@ -404,8 +419,8 @@ module.exports = {
   versionCheckStatus: versionCheckStatus,
   getLastBlock: getLastBlock,
   getPreps: getPreps,
-  getProposals: getProposals,
-  getProposalSummaryById: getProposalSummaryById,
+  getProposals: networkProposals.getProposals,
+  getProposalSummaryByStartBlockHeight: getProposalSummaryByStartBlockHeight,
   checkForNewProposals: checkForNewProposals,
   getNewProposalsSummary: getNewProposalsSummary,
   parseNewProposalsSummary: parseNewProposalsSummary

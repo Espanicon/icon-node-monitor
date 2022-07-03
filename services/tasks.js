@@ -201,23 +201,24 @@ async function compareGoloopVersionsTask(alarm = false) {
 }
 
 async function checkNetworkProposals() {
-  // get block height,
-  // get proposals
-  // get last proposal id in db
+  // task to check network proposals
   //
+  // get block height,
+  let reply = null;
   const lastBlockInNetwork = await model.getLastBlock();
-  const proposals = await model.getProposals();
-
-  if (lastBlockInNetwork === null || proposals === null) {
+  if (lastBlockInNetwork === null) {
     console.log("error running checkNetworkProposals task");
     return null;
   }
+
+  // read db and get block height of last checked network proposals
   let db = model.readDb();
-  const lastProposalIdInDb = db.lastProposalId;
+  let lastProposalInDb = db.lastBlockHeightCheckedForProposals;
 
   // get how many new proposals there are (returns array)
+  // or null if none
   const newProposalsInNetwork = await model.getNewProposalsSummary(
-    lastProposalIdInDb
+    lastProposalInDb
   );
   console.log("new proposals");
   console.log(newProposalsInNetwork);
@@ -227,18 +228,25 @@ async function checkNetworkProposals() {
     return null;
   }
 
-  //// if there are any new proposals check end block of last proposal
-  //// if end block is higher than current block, set last proposal id
-  //// in db equal to last proposal on network
-  const lastProposalInNetworkBlockHeight = newProposalsInNetwork.slice(-1)
-    .end_block_height;
-  if (lastProposalInNetworkBlockHeight > lastBlockInNetwork) {
-    db.lastProposalId = newProposalsInNetwork.slice(-1).id;
-    model.writeDb(db);
-    return `Proposal "${newProposalsInNetwork.slice(-1).title}" has ended.`;
+  let proposalsToUseInReply = [];
+  for (let proposal of newProposalsInNetwork) {
+    if (proposal.end_block_height > lastBlockInNetwork) {
+      proposalsToUseInReply.push(proposal);
+    } else {
+      if (lastProposalInDb > proposal.start_block_height) {
+        lastProposalInDb = proposal.start_block_height;
+      }
+    }
   }
-  //// if end block is not higher than current block print proposal info
-  const reply = await model.parseNewProposalsSummary(newProposalsInNetwork);
+
+  if (proposalsToUseInReply.length === 0) {
+    lastProposalInDb = lastBlockInNetwork;
+  } else {
+    reply = await model.parseNewProposalsSummary(proposalsToUseInReply);
+  }
+  db.lastBlockHeightCheckedForProposals = lastProposalInDb;
+  model.writeDb(db);
+
   return reply;
 }
 

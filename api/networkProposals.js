@@ -17,37 +17,12 @@ const GLOBAL = {
     }
   }
 };
-async function getLastBlock() {
-  let response;
-  try {
-    const postData = JSON.stringify({
-      jsonrpc: "2.0",
-      method: "icx_getLastBlock",
-      id: Math.ceil(Math.random() * 1000)
-    });
 
-    const params = {
-      hostname: GLOBAL.node.ctz,
-      path: GLOBAL.routes.v3,
-      method: "POST",
-      ...GLOBAL.param
-    };
-
-    response = await httpsRequest(params, postData);
-    return response.result.height;
-  } catch (err) {
-    console.log("error running customHttpsRequest");
-    console.log(err);
-    console.log(response);
-    return null;
-  }
-}
 async function customHttpsRequest(
   route,
   data = false,
   hostname = GLOBAL.node.ctz
 ) {
-  let response;
   try {
     let params = {
       hostname: hostname,
@@ -56,30 +31,68 @@ async function customHttpsRequest(
       ...GLOBAL.param
     };
 
-    response = await httpsRequest(params, data);
-    return response;
+    const request = await httpsRequest(params, data);
+    // return JSON.parse(request);
+    return request;
   } catch (err) {
     console.log("error running customHttpsRequest");
     console.log(err);
-    console.log(response);
     return null;
   }
 }
 
-function makePostData(method, params, height = null) {
-  let data = {
+function makeJSONRPCRequestObject(method) {
+  //
+  return {
     jsonrpc: "2.0",
-    method: "icx_call",
-    id: Math.ceil(Math.random() * 1000),
+    method: method,
+    id: Math.ceil(Math.random() * 1000)
+  };
+}
+async function getProposals() {
+  const JSONRPCObject = makeICXCallRequestObject(
+    "getProposals",
+    null,
+    null,
+    "cx0000000000000000000000000000000000000001"
+  );
+
+  const request = await customHttpsRequest(GLOBAL.routes.v3, JSONRPCObject);
+  return request.result.proposals;
+
+  // try {
+  //   const parsedRequest = JSON.parse(request);
+  //   return parsedRequest.result.proposals
+  // } catch (err) {
+  //   console.log("error on getPreps request response");
+  //   console.log(`response: ${request}.`);
+  //   console.error(err);
+  //   return [];
+  // }
+}
+
+function makeICXCallRequestObject(
+  method,
+  params = null,
+  height = null,
+  to = "cx0000000000000000000000000000000000000000"
+) {
+  const JSONRPCRequestObject = makeJSONRPCRequestObject("icx_call");
+  let data = {
+    ...JSONRPCRequestObject,
     params: {
-      to: "cx0000000000000000000000000000000000000000",
+      to: to,
       dataType: "call",
       data: {
-        method: method,
-        params: params
+        method: method
       }
     }
   };
+
+  if (params === null) {
+  } else {
+    data.params.data.params = params;
+  }
 
   if (height === null) {
   } else {
@@ -92,9 +105,81 @@ function makePostData(method, params, height = null) {
   return JSON.stringify(data);
 }
 
+async function getScoreApi(
+  address = "cx0000000000000000000000000000000000000000"
+) {
+  //
+  try {
+    const postData = JSON.stringify({
+      ...makeJSONRPCRequestObject("icx_getScoreApi"),
+      params: {
+        address: address
+      }
+    });
+
+    const response = await customHttpsRequest(GLOBAL.routes.v3, postData);
+    // const parsedResponse = JSON.parse(response);
+    return response.result;
+  } catch (err) {
+    console.log("error running customHttpsRequest");
+    console.log(err);
+    return null;
+  }
+}
+async function getLastBlock() {
+  try {
+    const postData = JSON.stringify(
+      makeJSONRPCRequestObject("icx_getLastBlock")
+    );
+
+    const response = await customHttpsRequest(GLOBAL.routes.v3, postData);
+    // console.log(response);
+    // const parsedResponse = JSON.parse(response);
+    return response.result.height;
+  } catch (err) {
+    console.log("error running customHttpsRequest");
+    console.log(err);
+    return null;
+  }
+}
+
+async function getPreps(height = null) {
+  const postData = makeICXCallRequestObject(
+    "getPReps",
+    { startRanking: "0x1" },
+    height
+  );
+  const request = await customHttpsRequest(GLOBAL.routes.v3, postData);
+  return request.result.preps;
+
+  // try {
+  //   const parsedRequest = JSON.parse(request);
+  //   return parsedRequest.result.preps;
+  // } catch (err) {
+  //   console.log("error on getPreps request response");
+  //   console.log(`response: ${request}.`);
+  //   console.error(err);
+  //   return [];
+  // }
+}
+
+async function getProposalsFromTracker() {
+  const request = await customHttpsRequest(
+    GLOBAL.routes.proposals,
+    false,
+    GLOBAL.node.tracker
+  );
+  return request;
+}
+
 module.exports = {
   customHttpsRequest: customHttpsRequest,
-  makePostData: makePostData,
+  makeJSONRPCRequestObject: makeJSONRPCRequestObject,
   GLOBAL: GLOBAL,
-  getLastBlock: getLastBlock
+  getLastBlock: getLastBlock,
+  makeICXCallRequestObject: makeICXCallRequestObject,
+  getScoreApi: getScoreApi,
+  getPreps: getPreps,
+  getProposalsFromTracker: getProposalsFromTracker,
+  getProposals: getProposals
 };
