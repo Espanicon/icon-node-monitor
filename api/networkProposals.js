@@ -1,4 +1,5 @@
 const httpsRequest = require("../api/httpsRequest.js");
+const useLog = require("../services/logger.js");
 
 const GLOBAL = {
   node: {
@@ -35,8 +36,8 @@ async function customHttpsRequest(
     // return JSON.parse(request);
     return request;
   } catch (err) {
-    console.log("error running customHttpsRequest");
-    console.log(err);
+    useLog("error running customHttpsRequest");
+    useLog(err);
     return null;
   }
 }
@@ -64,8 +65,8 @@ async function getProposals() {
   //   const parsedRequest = JSON.parse(request);
   //   return parsedRequest.result.proposals
   // } catch (err) {
-  //   console.log("error on getPreps request response");
-  //   console.log(`response: ${request}.`);
+  //   useLog("error on getPreps request response");
+  //   useLog(`response: ${request}.`);
   //   console.error(err);
   //   return [];
   // }
@@ -121,8 +122,8 @@ async function getScoreApi(
     // const parsedResponse = JSON.parse(response);
     return response.result;
   } catch (err) {
-    console.log("error running customHttpsRequest");
-    console.log(err);
+    useLog("error running customHttpsRequest");
+    useLog(err);
     return null;
   }
 }
@@ -133,12 +134,12 @@ async function getLastBlock() {
     );
 
     const response = await customHttpsRequest(GLOBAL.routes.v3, postData);
-    // console.log(response);
+    // useLog(response);
     // const parsedResponse = JSON.parse(response);
     return response.result.height;
   } catch (err) {
-    console.log("error running customHttpsRequest");
-    console.log(err);
+    useLog("error running customHttpsRequest");
+    useLog(err);
     return null;
   }
 }
@@ -156,8 +157,8 @@ async function getPreps(height = null) {
   //   const parsedRequest = JSON.parse(request);
   //   return parsedRequest.result.preps;
   // } catch (err) {
-  //   console.log("error on getPreps request response");
-  //   console.log(`response: ${request}.`);
+  //   useLog("error on getPreps request response");
+  //   useLog(`response: ${request}.`);
   //   console.error(err);
   //   return [];
   // }

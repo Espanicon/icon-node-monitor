@@ -1,5 +1,6 @@
 const httpsRequest = require("./httpsRequest.js");
 const path = require("path");
+const useLog = require("../services/logger.js");
 
 const URL = {
   hostname: "index.docker.io",
@@ -34,30 +35,30 @@ function getParams(token) {
 async function getGoloopImageTags() {
   try {
     const tokenReq = await httpsRequest(PARAMS2);
-    // console.log(tokenReq);
+    // useLog(tokenReq);
 
     let authParams = getParams(tokenReq.token);
-    // console.log(authParams);
+    // useLog(authParams);
 
     const req = await httpsRequest(authParams);
 
     // return the tags array from the request result
     return req.tags;
   } catch (err) {
-    console.log("error running query");
-    console.log(err);
+    useLog("error running query");
+    useLog(err);
   }
 }
 const filePathInfo = path.parse(__filename);
 if (require.main === module) {
   // if the file gets called directly on the terminal
-  console.log(`running ${filePathInfo.base} file directly from the terminal`);
+  useLog(`running ${filePathInfo.base} file directly from the terminal`);
   (async () => {
     let result = await getGoloopImageTags();
-    console.log(result);
+    useLog(result);
   })();
 } else {
   // if the file gets imported as a module
-  console.log(`${filePathInfo.base} file imported as a module`);
+  useLog(`${filePathInfo.base} file imported as a module`);
   module.exports = getGoloopImageTags;
 }

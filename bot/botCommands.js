@@ -5,6 +5,7 @@ const customPath = require("../services/customPath.js");
 const lib = require("../services/lib.js");
 const { model } = require("../model");
 const { getGoloopImageTags, getNodeGoloopVersion } = require("../api");
+const useLog = require("../services/logger.js");
 
 /**
  * bot command '/checkMonitoredNodesHeight'

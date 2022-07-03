@@ -3,6 +3,7 @@ node_modules/
 
 # testing files and other stuffs
 nogit/
+logs/*
 
 # misc files
 .env

@@ -1,5 +1,6 @@
 // api/getNodeGoloopVersion.js
 const httpRequest = require("./httpRequest.js");
+const useLog = require("../services/logger.js");
 
 const PARAMS = {
   port: 9000,
@@ -22,7 +23,7 @@ async function getNodeGoloopVersion(node, params = PARAMS) {
 
     result.version = req.buildVersion;
   } catch (err) {
-    console.log("Error on getNodeGoloopVersion: " + err);
+    useLog("Error on getNodeGoloopVersion: " + err);
   }
   return result;
 }

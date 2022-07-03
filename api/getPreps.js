@@ -8,6 +8,7 @@
 //
 const httpRequest = require("./httpRequest");
 const fs = require("fs");
+const useLog = require("../services/logger.js");
 
 // Global constants
 const PARAMS = {
@@ -70,14 +71,14 @@ async function getPreps(nodeIP, path = PATH) {
   });
   try {
     if (fs.existsSync(path)) {
-      console.log(`file '${path}' already exists`);
+      useLog(`file '${path}' already exists`);
     } else {
       let fileData = JSON.stringify({ NODES_ARRAY: parsedPReps });
       fs.writeFileSync(path, fileData);
-      console.log(`file '${path}' created`);
+      useLog(`file '${path}' created`);
     }
   } catch (err) {
-    console.error(err);
+    useLog(err);
   }
 
   // Return array of objects representing each main PRep

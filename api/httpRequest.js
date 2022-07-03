@@ -2,6 +2,7 @@
 // Imports
 //
 const http = require("http");
+const useLog = require("../services/logger.js");
 
 /**
  * async http request wrapped in a promise
@@ -14,10 +15,10 @@ const http = require("http");
  */
 async function httpRequest(params, data = false) {
   const promisifiedQuery = new Promise((resolve, reject) => {
-    console.log("Making http request to: " + params.hostname);
+    useLog("Making http request to: " + params.hostname);
     const query = http.request(params, res => {
       // Print status code on console
-      console.log("Status code of http response: " + res.statusCode);
+      useLog("Status code of http response: " + res.statusCode);
 
       // Process chunked data
       let rawData = "";
@@ -33,19 +34,19 @@ async function httpRequest(params, data = false) {
 
       // if error, print on console
       res.on("error", err => {
-        console.log("Error while running http request: ", +err);
+        useLog("Error while running http request: ", +err);
       });
     });
     // If request timeout destroy request
     query.on("timeout", () => {
-      console.log(
+      useLog(
         `timeout while running http request with no response after ${params.timeout} ms. destroying query`
       );
       query.destroy();
     });
     // Handle query error
     query.on("error", err => {
-      console.log("error running query, passing error to callback reject");
+      useLog("error running query, passing error to callback reject");
       reject(err);
     });
     if (data != false) {
@@ -62,8 +63,8 @@ async function httpRequest(params, data = false) {
   try {
     return await promisifiedQuery;
   } catch (err) {
-    console.log("error while running promisifiedQuery");
-    console.log(err);
+    useLog("error while running promisifiedQuery");
+    useLog(err);
     throw "error connecting to node";
   }
 }
@@ -71,7 +72,7 @@ async function httpRequest(params, data = false) {
 if (require.main === module) {
   // If its the main entry point of the app execute test
   //
-  console.log("running test on httpRequest");
+  useLog("running test on httpRequest");
 
   (async () => {
     let test = await httpRequest(
@@ -82,7 +83,7 @@ if (require.main === module) {
       },
       false
     );
-    console.log(test);
+    useLog(test);
   })();
 } else {
   // else, export as module

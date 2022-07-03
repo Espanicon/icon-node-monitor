@@ -4,6 +4,7 @@ const customPath = require("../services/customPath.js");
 const syncGetPreps = require("../services/syncGetPreps.js");
 const networkProposals = require("../api/networkProposals.js");
 const lib = require("../services/lib.js");
+const useLog = require("../services/logger.js");
 
 const _DB_ = "data/db.json";
 const _PREPS_ = "data/preps.json";
@@ -32,7 +33,7 @@ function getStrings() {
     strings = JSON.parse(fs.readFileSync(customPath(_STRINGS_)));
     return strings;
   } catch (err) {
-    console.log("Error while processing 'data/strings.json' file", err);
+    useLog("Error while processing 'data/strings.json' file", err);
     // this file is critical so if it doesnt exists throw an exception to kill app
     throw "CRITICAL ERROR: there was an error while processing strings.json file";
   }
@@ -49,8 +50,8 @@ function getListOfPreps() {
     try {
       result = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
     } catch (err) {
-      console.log("Error while reading data/preps.json", err);
-      // console.log("Creating new list of preps");
+      useLog("Error while reading data/preps.json", err);
+      // useLog("Creating new list of preps");
       // updatePrepsList();
       // preps = JSON.parse(fs.readFileSync(customPath(_PREPS_)));
     }
@@ -72,9 +73,9 @@ function addBotAdmin(ctxFrom) {
     db.admin.username = ctxFrom.username;
     db.state.locked = true;
     writeDb(db);
-    console.log(`Successfully added user ${db.admin.username} as bot admin`);
+    useLog(`Successfully added user ${db.admin.username} as bot admin`);
   } else {
-    console.log(
+    useLog(
       `Current user was not added as admin because the bot admin state is currently locked and admin was already added. Current bot admin is ${db.admin.username}`
     );
   }
@@ -109,7 +110,7 @@ function writeDb(data) {
  */
 function removeUsersFromDbReport(validStringOfUsers) {
   let parsedListOfUsers = lib.parseUserList(validStringOfUsers);
-  console.log(
+  useLog(
     `Removing the following users from the database: ${parsedListOfUsers}`
   );
   let newListOfUsers = [];
@@ -125,7 +126,7 @@ function removeUsersFromDbReport(validStringOfUsers) {
   }
   db.report = newListOfUsers;
   writeDb(db);
-  console.log(
+  useLog(
     `Users successfully removed from list, updated list contains the following users: ${db.report}`
   );
 
@@ -210,7 +211,7 @@ function updateDbMonitored(data, typeOfUpdate) {
         "The node you specified was not found in the list of monitored nodes";
     }
   } else {
-    console.log(
+    useLog(
       'typeOfUpdate can only be "ADD" or "DELETE", raised exception because value of typeOfUpdate was ',
       typeOfUpdate
     );

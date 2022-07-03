@@ -1,6 +1,7 @@
 // ./bot/botReplyMaker.js
 //
 const { model } = require("../model");
+const useLog = require("../services/logger.js");
 
 const STRINGS = model.getStrings();
 

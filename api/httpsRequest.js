@@ -7,6 +7,7 @@
 // Imports
 //
 const https = require("https");
+const useLog = require("../services/logger.js");
 
 /**
  * async https request wrapped in a promise
@@ -19,10 +20,10 @@ const https = require("https");
  */
 async function httpsRequest(params, data = false) {
   const promisifiedQuery = new Promise((resolve, reject) => {
-    console.log("query ip: " + params.hostname);
+    useLog("query ip: " + params.hostname);
     const query = https.request(params, res => {
       // Print status code on console
-      console.log("Status Code: " + res.statusCode);
+      useLog("Status Code: " + res.statusCode);
 
       // Process chunked data
       let rawData = "";
@@ -38,17 +39,17 @@ async function httpsRequest(params, data = false) {
 
       // if error, print on console
       res.on("error", err => {
-        console.log("Got error: ", +err.message);
+        useLog("Got error: ", +err.message);
       });
     });
     // If request timeout destroy request
     query.on("timeout", () => {
-      console.log("timeout. destroying query");
+      useLog("timeout. destroying query");
       query.destroy();
     });
     // Handle query error
     query.on("error", err => {
-      console.log("error running query, passing error to callback reject");
+      useLog("error running query, passing error to callback reject");
       reject(err);
     });
     if (data != false) {
@@ -65,8 +66,8 @@ async function httpsRequest(params, data = false) {
   try {
     return await promisifiedQuery;
   } catch (err) {
-    console.log("error while running promisifiedQuery");
-    console.log(err);
+    useLog("error while running promisifiedQuery");
+    useLog(err);
     throw "error connecting to node";
   }
 }

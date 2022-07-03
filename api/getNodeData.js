@@ -1,5 +1,6 @@
 // imports
 const httpRequest = require("./httpRequest");
+const useLog = require("../services/logger.js");
 
 // global constants for testing and running standalone
 const PARAMS = {
@@ -39,7 +40,7 @@ async function getDataFromNode(node, params = PARAMS) {
     result.state = nodeResponse.state;
     result.height = nodeResponse.height;
   } catch (error) {
-    console.log("error on getDataFromNode: " + error);
+    useLog("error on getDataFromNode: " + error);
   }
   return result;
 }
@@ -67,15 +68,15 @@ async function getDataFromArrayOfNodes(nodes, params = PARAMS) {
 if (require.main === module) {
   // If it gets executed directly for testing
   //
-  console.log(`running getDataFromArrayOfNodes() standalone`);
+  useLog(`running getDataFromArrayOfNodes() standalone`);
   (async () => {
     let res = await getDataFromArrayOfNodes(NODES, PARAMS);
-    console.log(res);
+    useLog(res);
   })();
 } else {
   // If it gets imported as a module
   //
-  console.log(`queryArrayOfNodes.js imported as module`);
+  useLog(`queryArrayOfNodes.js imported as module`);
   exports.getDataFromArrayOfNodes = getDataFromArrayOfNodes;
   exports.getDataFromNode = getDataFromNode;
 }

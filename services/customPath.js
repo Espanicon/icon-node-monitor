@@ -1,6 +1,7 @@
 // customPath.js
 //
 const path = require("path");
+const useLog = require("./logger.js");
 
 const fullPath = path.parse(__filename).dir;
 const fullPathArray = fullPath.split("/");
@@ -27,7 +28,7 @@ if (require.main === module) {
   let testPath = fullPath.split("/");
   testPath.pop();
   testPath = testPath.join("/");
-  console.log(
+  useLog(
     `Running ${path.parse(__filename).base} file directly from terminal\n`
   );
 
@@ -37,6 +38,6 @@ if (require.main === module) {
   );
 } else {
   // if the file gets imported as a module
-  console.log(`${path.parse(__filename).base} file imported as a module`);
+  useLog(`${path.parse(__filename).base} file imported as a module`);
   module.exports = customPath;
 }

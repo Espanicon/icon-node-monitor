@@ -10,6 +10,7 @@ require("dotenv").config();
 const { httpRequest, httpsRequest } = require("../api");
 const fs = require("fs");
 const customPath = require("../services/customPath.js");
+const useLog = require('./logger.js');
 
 // TODO: currently the model/model.js module is importing this file, to avoid
 // to avoid circular dependency issues the exact same code logic for reading
@@ -21,7 +22,7 @@ function readDb() {
   if (fs.existsSync(customPath(_DB_))) {
     return JSON.parse(fs.readFileSync(customPath(_DB_)));
   } else {
-    console.log("database (db.json) havent been created");
+    useLog("database (db.json) havent been created");
     return null;
   }
 }
@@ -97,20 +98,20 @@ async function asyncRun(path = FILE_PATH) {
         });
 
         if (fs.existsSync(path)) {
-          console.log(
+          useLog(
             `file '${path}' already exists, it will be removed to update it.`
           );
           fs.unlinkSync(path);
         }
         let fileData = JSON.stringify({ NODES_ARRAY: parsedPReps });
         fs.writeFileSync(path, fileData);
-        console.log(`file '${path}' created`);
+        useLog(`file '${path}' created`);
         // if the process was finished corretly we return true, the function calling
         // this method will receive this and validate that the update on the Preps
         // list was done correctly
         return true;
       } catch (err) {
-        console.log("Unexpected error while trying to create preps.json file");
+        useLog("Unexpected error while trying to create preps.json file");
         console.error(err);
       }
     } else {
@@ -122,7 +123,7 @@ async function asyncRun(path = FILE_PATH) {
 if (require.main === module) {
   // If its the main entry point of the app
   //
-  console.log("running syncGetPReps() standalone");
+  useLog("running syncGetPReps() standalone");
   asyncRun();
 } else {
   // If its a module

@@ -4,6 +4,7 @@ const { customPath, lib } = require("../services");
 const { model } = require("../model");
 
 const fs = require("fs");
+const useLog = require("../services/logger.js");
 
 const STRINGS = model.getStrings();
 

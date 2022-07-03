@@ -2,6 +2,7 @@
 //
 
 const { getNodeData } = require("../api");
+const useLog = require("./logger.js");
 
 /**
  * Returns chain height and height of each monitored nodes and block producers

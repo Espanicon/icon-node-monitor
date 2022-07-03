@@ -6,6 +6,7 @@ const { model } = require("../model");
 const botCommands = require("../bot/botCommands.js");
 const lib = require("./lib.js");
 const { getNodeGoloopVersion, getGoloopImageTags } = require("../api");
+const useLog = require("./logger.js");
 
 // Global constants
 const STRINGS = model.getStrings();
@@ -48,8 +49,8 @@ function setAlarmState(data) {
 
 function create10MinutesTaskReply(firstState, secondState) {
   //
-  console.log("First State: " + firstState.isInAlert);
-  console.log("Second State: " + secondState.isInAlert);
+  useLog("First State: " + firstState.isInAlert);
+  useLog("Second State: " + secondState.isInAlert);
   let reply = "";
   if (secondState.isInAlert === true) {
     // if alert goes off
@@ -109,20 +110,20 @@ async function checkMonitoredNodesTask() {
         if (fs.existsSync(customPath(STATE_PATH))) {
           fs.unlinkSync(customPath(STATE_PATH));
         }
-        console.log("nodes ok\n\n");
+        useLog("nodes ok\n\n");
       } else {
         fs.writeFileSync(STATE_PATH, JSON.stringify(secondState));
         // botContext(botId, reply);
-        console.log("reply from task run: ", reply);
+        useLog("reply from task run: ", reply);
         return reply;
       }
     } catch (err) {
-      console.log("error running task");
-      console.log(err);
+      useLog("error running task");
+      useLog(err);
     }
   } else {
     // no node has been added to list of monitored nodes
-    console.log(
+    useLog(
       "No nodes have been added to monitored list, bypassing recursive task"
     );
   }
@@ -146,7 +147,7 @@ async function compareGoloopVersionsTask(alarm = false) {
     version: null,
     nodes: []
   };
-  console.log(db);
+  useLog(db);
 
   if (
     db.monitored.length > 0 &&
@@ -177,7 +178,7 @@ async function compareGoloopVersionsTask(alarm = false) {
       }
     }
   } else {
-    console.log(
+    useLog(
       "Skipping version check. either no nodes or people to report has been added"
     );
     if (db.monitored > 0) {
@@ -207,7 +208,7 @@ async function checkNetworkProposals() {
   let reply = null;
   const lastBlockInNetwork = await model.getLastBlock();
   if (lastBlockInNetwork === null) {
-    console.log("error running checkNetworkProposals task");
+    useLog("error running checkNetworkProposals task");
     return null;
   }
 
@@ -220,8 +221,8 @@ async function checkNetworkProposals() {
   const newProposalsInNetwork = await model.getNewProposalsSummary(
     lastProposalInDb
   );
-  console.log("new proposals");
-  console.log(newProposalsInNetwork);
+  useLog("new proposals");
+  useLog(newProposalsInNetwork);
   if (newProposalsInNetwork === null) {
     // if newProposalsInNetwork === null there are no new proposals, so
     // we return null
@@ -253,14 +254,14 @@ async function checkNetworkProposals() {
 async function recursiveTask(task, sendMsgHandler, interval) {
   let db = model.readDb();
   if (db.report.length > 0) {
-    console.log(
+    useLog(
       `Running recursive task every ${interval} ms. Users to report for this task are: `,
       db.report
     );
     let taskResult = await task();
     sendMsgHandler(taskResult);
   } else {
-    console.log("No users added to the report list, skipping recursive task");
+    useLog("No users added to the report list, skipping recursive task");
   }
 }
 

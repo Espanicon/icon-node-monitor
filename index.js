@@ -1,10 +1,12 @@
 // imports
 require("dotenv").config();
+const bootCheck = require("./services/bootCheck.js");
 const { Telegraf, session, Markup, Scenes } = require("telegraf");
 const fs = require("fs");
 const { botCommands, botReplyMaker, customScenes } = require("./bot");
 const { customPath, tasks } = require("./services");
 const { model } = require("./model");
+const useLog = require("./services/logger.js");
 
 // global constants
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -22,7 +24,7 @@ function replyWrapper(botContext, msg) {
   if (typeof msg === "string") {
     botContext.reply(msg);
   } else {
-    console.log(
+    useLog(
       `error while sending message with the bot. type of message ${typeof msg} content of message: `,
       msg
     );
@@ -108,7 +110,7 @@ iconNodeMonitorBot.action(STRINGS.actions.edit_task.tag, (ctx, next) => {
 // /test command
 // iconNodeMonitorBot.command("/test", async ctx => {
 //   let commands = await ctx.telegram.botCommandsScopeChat;
-//   console.log(commands);
+//   useLog(commands);
 // });
 // start command
 iconNodeMonitorBot.command("start", ctx => {
@@ -243,7 +245,7 @@ iconNodeMonitorBot.command("/showListOfPreps", ctx => {
   ctx.session.db = model.readDbAndCheckForAdmin(ctx.from);
   reply = null;
   let data = botCommands.showListOfPreps();
-  console.log("data: ", data);
+  useLog("data: ", data);
   if (data == null) {
     reply =
       "In order to get the list of Preps you need to first add at least one node to monitor, send '/start' command to add a node";
@@ -271,14 +273,21 @@ iconNodeMonitorBot.command("checkMonitoredNodesHeight", async ctx => {
 });
 
 // Running the bot
-iconNodeMonitorBot.launch();
+if (bootCheck.result) {
+  // if the boot check passes all tests run the bot.
+  iconNodeMonitorBot.launch();
+} else {
+  // this uncaughtException will be catch lower in this file and kill the
+  // process
+  throw new Error("Error during boot");
+}
 
 // Function to send message to TG group
 function botSendMsgFunction(taskResult) {
   let db = model.readDb();
   if (taskResult == null) {
     // do nothing
-    console.log("Task result: Skipping message to all users");
+    useLog("Task result: Skipping message to all users");
   } else {
     if (db.report.length > 0) {
       for (let eachUserToReport of db.report) {
@@ -335,7 +344,7 @@ function isTelegramErrorType(error) {
       return false;
     }
   } catch (err) {
-    console.log("Error while getting constructor", err);
+    useLog("Error while getting constructor", err);
   }
 }
 
@@ -343,10 +352,10 @@ function isTelegramErrorType(error) {
 process.on("uncaughtException", err => {
   let killApp = true;
   if (isTelegramErrorType(err)) {
-    console.log("Unexpected error of type 'TelegramError'.", err);
+    useLog("Unexpected error of type 'TelegramError'.", err);
     killApp = true;
   } else {
-    console.log("uncaughtException : ", err);
+    useLog("uncaughtException : ", err);
     process.exit(1);
   }
   if (killApp) {
