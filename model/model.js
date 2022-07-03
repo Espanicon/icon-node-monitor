@@ -41,10 +41,12 @@ function getStrings() {
 
 function updatePrepsList() {
   // rebuilds the preps.json file
+  useLog("running updatePrepsList()");
   return syncGetPreps(customPath(_PREPS_));
 }
 
 function getListOfPreps() {
+  useLog("running getListOfPreps()");
   let result = null;
   if (prepsFileExists() === true) {
     try {
@@ -58,6 +60,7 @@ function getListOfPreps() {
   } else {
     result = updatePrepsList();
   }
+  useLog(`Result of running getListOfPreps: ${result}`);
   return result;
 }
 function prepsFileExists() {
@@ -82,9 +85,13 @@ function addBotAdmin(ctxFrom) {
 }
 
 function readDbAndCheckForAdmin(currentUser) {
+  useLog(
+    `Running  readDbAndCheckForAdmin(currentUser) with currentUser = ${currentUser}`
+  );
   db = readDb();
   if (db.admin.id == null || db.admin.username == null) {
     // if bot admin havent been set
+    useLog("Bot admin have not been set");
     addBotAdmin(currentUser);
   }
   // return new read on db to account for an update on admin status
@@ -92,18 +99,25 @@ function readDbAndCheckForAdmin(currentUser) {
 }
 
 function readDb() {
+  useLog(`reading local db on ${customPath(_DB_)}`);
   if (fs.existsSync(customPath(_DB_))) {
-    return JSON.parse(fs.readFileSync(customPath(_DB_)));
+    const db = JSON.parse(fs.readFileSync(customPath(_DB_)));
+    useLog(db);
+    return db;
   } else {
     let firstState = dbInitState();
     fs.writeFileSync(customPath(_DB_), JSON.stringify(firstState));
+    useLog(firstState);
     return firstState;
   }
 }
 
 function writeDb(data) {
+  useLog(`Writing new data to local db in ${customPath(_DB_)}`);
+  useLog(data);
   fs.writeFileSync(customPath(_DB_), JSON.stringify(data));
 }
+
 /*
  * Remove one or more users from the report list in the database
  * @param {string} validatedStringOfUsers
@@ -152,6 +166,8 @@ function removeUsersFromDbReport(validStringOfUsers) {
  * @param {{username: string, id: number}} data
  */
 function updateDbReport(data) {
+  useLog(`Running updateDbReport`);
+  useLog(data);
   let db = readDb();
   for (let eachUser of db.report) {
     if (eachUser.id === data.id) {
@@ -169,6 +185,7 @@ function updateDbMonitored(data, typeOfUpdate) {
    * data: [{name: string, ip: number}]
    * typeOfUpdate: ADD || DELETE
    */
+  useLog("Running updateDbMonitored");
   let result = "";
   let db = readDb();
   if (typeOfUpdate === "ADD") {
@@ -218,22 +235,29 @@ function updateDbMonitored(data, typeOfUpdate) {
     throw "Wrong typeOfUpdate";
   }
 
+  useLog("Result of running updateDbMonitored");
+  useLog(result);
   return result;
 }
 
 function lock() {
+  useLog("Locking database");
   let db = readDb();
   db.state.locked = true;
   writeDb(db);
+  useLog("database locked");
 }
 function unlock() {
+  useLog("unlocking database");
   let db = readDb();
   db.state.locked = false;
   writeDb(db);
+  useLog("database unlocked");
 }
 
 function versionCheckStatus(statusString) {
   // statusString can either be 'start' or 'stop'
+  useLog("Running versionCheckStatus");
   let db = readDb();
   if (statusString === "stop") {
     db.versionCheck = false;
@@ -248,13 +272,16 @@ function versionCheckStatus(statusString) {
 
 ///////////////////////NETWORK PROPOSALS METHODS
 async function getLastBlock() {
+  useLog("Running getLastBlock");
   return await networkProposals.getLastBlock();
 }
 async function getPreps(height = null) {
+  useLog("Running getPreps");
   return await networkProposals.getPreps(height);
 }
 
 function parseProposals(arrayOfProposals) {
+  useLog("Running parseProposals");
   let parsedProposals = [];
   for (let proposal of arrayOfProposals) {
     let proposalObject = {
@@ -281,6 +308,7 @@ async function getProposalSummaryByStartBlockHeight(
   startBlockHeight,
   fromTracker = false
 ) {
+  useLog("Running getProposalSummaryByStartBlockHeight");
   let proposals;
   if (fromTracker) {
     proposals = await networkProposals.getProposalsFromTracker();
@@ -324,6 +352,7 @@ async function checkForNewProposals(
   lastProposalBlockHeight,
   fromTracker = false
 ) {
+  useLog("Running checkForNewProposals");
   let proposals;
   if (fromTracker) {
     proposals = await networkProposals.getProposalsFromTracker();
@@ -347,6 +376,7 @@ async function checkForNewProposals(
 }
 
 async function getNewProposalsSummary(lastProposalBlockHeight) {
+  useLog("Running getNewProposalsSummary");
   let newProposals = await checkForNewProposals(lastProposalBlockHeight);
   let newProposalsSummary = [];
 
@@ -363,6 +393,7 @@ async function getNewProposalsSummary(lastProposalBlockHeight) {
 }
 
 async function parseNewProposalsSummary(arrayOfProposals) {
+  useLog("Running parseNewProposalsSummary");
   if (arrayOfProposals === null) {
     return "No new proposals.";
   } else {

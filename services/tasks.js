@@ -127,6 +127,7 @@ async function checkMonitoredNodesTask() {
       "No nodes have been added to monitored list, bypassing recursive task"
     );
   }
+  useLog("Task result: running checkMonitoredNodeTask.");
   return null;
 }
 
@@ -186,6 +187,7 @@ async function compareGoloopVersionsTask(alarm = false) {
     } else {
       // if there are people to report but no nodes
     }
+    useLog("Task result: running compareGoloopVersionTask.");
     return null;
   }
   // uncomment the below line for testing the function
@@ -214,7 +216,10 @@ async function checkNetworkProposals() {
 
   // read db and get block height of last checked network proposals
   let db = model.readDb();
-  let lastProposalInDb = db.lastBlockHeightCheckedForProposals;
+  let lastProposalInDb =
+    db.lastBlockHeightCheckedForProposals == null
+      ? lastBlockInNetwork
+      : db.lastBlockHeightCheckedForProposals;
 
   // get how many new proposals there are (returns array)
   // or null if none
@@ -226,6 +231,7 @@ async function checkNetworkProposals() {
   if (newProposalsInNetwork === null) {
     // if newProposalsInNetwork === null there are no new proposals, so
     // we return null
+    useLog("Task result: running checkNetworkProposals. no new proposal found");
     return null;
   }
 
