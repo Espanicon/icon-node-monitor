@@ -305,7 +305,7 @@ async function runGoloopVersionTask() {
   tasks.recursiveTask(
     tasks.compareGoloopVersionsTask,
     botSendMsgFunction,
-    tasks.INTERVALS.oneHour
+    tasks.INTERVALS.oneDay
   );
   setTimeout(runGoloopVersionTask, tasks.INTERVALS.oneDay);
 }
@@ -324,7 +324,7 @@ async function runNetworkProposalTask() {
   tasks.recursiveTask(
     tasks.checkNetworkProposals,
     botSendMsgFunction,
-    tasks.INTERVALS.oneMinute
+    tasks.INTERVALS.oneHour
   );
   setTimeout(runNetworkProposalTask, tasks.INTERVALS.oneHour);
 }

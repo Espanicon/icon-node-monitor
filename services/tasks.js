@@ -206,7 +206,8 @@ async function compareGoloopVersionsTask(alarm = false) {
 async function checkNetworkProposals() {
   // task to check network proposals
   //
-  // get block height,
+  // get block height
+  useLog("Running task: CheckNetworkProposals");
   let reply = null;
   const lastBlockInNetwork = await model.getLastBlock();
   if (lastBlockInNetwork === null) {
@@ -228,10 +229,14 @@ async function checkNetworkProposals() {
   );
   useLog("new proposals");
   useLog(newProposalsInNetwork);
+
+  // early return if no new proposals found
   if (newProposalsInNetwork === null) {
     // if newProposalsInNetwork === null there are no new proposals, so
     // we return null
     useLog("Task result: running checkNetworkProposals. no new proposal found");
+    db.lastBlockHeightCheckedForProposals = lastProposalInDb;
+    model.writeDb(db);
     return null;
   }
 
@@ -254,6 +259,8 @@ async function checkNetworkProposals() {
   db.lastBlockHeightCheckedForProposals = lastProposalInDb;
   model.writeDb(db);
 
+  useLog("Task result: running checkNetworkProposals.");
+  useLog(reply);
   return reply;
 }
 

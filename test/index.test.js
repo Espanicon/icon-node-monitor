@@ -114,6 +114,15 @@ async function runEveryMinuteToo() {
   setTimeout(runEveryMinuteToo, tasks.INTERVALS.oneMinute);
 }
 
+async function runEveryMinute3() {
+  tasks.recursiveTask(
+    tasks.checkNetworkProposals,
+    botSendMsgFunction,
+    tasks.INTERVALS.oneMinute
+  );
+  setTimeout(runEveryMinute3, tasks.INTERVALS.oneMinute);
+}
+
 (async () => {
   let newBot = new Bot(PREPS, MONITORED);
   let breakLine = "\n-----------\n";
@@ -164,5 +173,6 @@ async function runEveryMinuteToo() {
   // console.log(result9, breakLine);
 
   // setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
-  setTimeout(runEveryMinuteToo, tasks.INTERVALS.oneMinute);
+  // setTimeout(runEveryMinuteToo, tasks.INTERVALS.oneMinute);
+  setTimeout(runEveryMinute3, tasks.INTERVALS.oneMinute);
 })();
