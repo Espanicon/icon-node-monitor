@@ -4,6 +4,7 @@ node_modules/
 # testing files and other stuffs
 nogit/
 logs/*
+*.swp
 
 # misc files
 .env
