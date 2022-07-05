@@ -5,7 +5,7 @@
 The bot has 3 main functions which are the following:
 * A list of commands that can be used to check nodes you add to be monitored.
 * Runs a recursive check every minute and in the case any of your nodes being behind the ICON Network block height for more than 100 blocks it sends a message to all the users (or chat groups) you add to the bot.
-* Runs a recursive check every hour and verifies the goloop version of the nodes, in case any of the nodes being monitored is not running the latest version of goloop in the docker repositories it will also send an alert to the users (or chat groups) you added to the bot. This check can be stopped via bot commands.
+* A set of recursive task that run at different intervals to check if the monitored nodes are online, what Goloop version they are running, if new network proposals have been submitted to the network and a clean up task for the 'logs/' folder. In the case that any node is offline, a new network proposals was submitted or any monitored node is running an outdated version of Goloop, the bot will send alert messages to the users (or groups) registered to the bot report list.
 
 The bot allows for a user to be the bot admin and has a lock/unlock state, if the bot is locked only the bot admin is allow to modify certain configurations (add/remove nodes to be monitored and users to the report list) and run certain commands (i.e stopping and starting the version check for the nodes).
 

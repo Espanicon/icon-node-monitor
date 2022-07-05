@@ -122,6 +122,14 @@ async function runEveryMinute3() {
   );
   setTimeout(runEveryMinute3, tasks.INTERVALS.oneMinute);
 }
+async function runEveryMinute4() {
+  tasks.recursiveTask(
+    tasks.cleanOldLogs,
+    botSendMsgFunction,
+    tasks.INTERVALS.oneMinute
+  );
+  setTimeout(runEveryMinute4, tasks.INTERVALS.oneMinute);
+}
 
 (async () => {
   let newBot = new Bot(PREPS, MONITORED);
@@ -174,5 +182,6 @@ async function runEveryMinute3() {
 
   // setTimeout(runEveryMinute, tasks.INTERVALS.oneMinute);
   // setTimeout(runEveryMinuteToo, tasks.INTERVALS.oneMinute);
-  setTimeout(runEveryMinute3, tasks.INTERVALS.oneMinute);
+  // setTimeout(runEveryMinute3, tasks.INTERVALS.oneMinute);
+  setTimeout(runEveryMinute4, tasks.INTERVALS.oneMinute);
 })();

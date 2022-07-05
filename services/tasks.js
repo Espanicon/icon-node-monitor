@@ -15,6 +15,7 @@ const MAX_ALLOWED_BLOCK_GAP = 100;
 
 // TODO: the entire logic of accessing the state should be moved to models.js
 const STATE_PATH = "data/state.json";
+const LOG_PATH = "logs/";
 
 // Functions
 function getBlankState() {
@@ -263,6 +264,58 @@ async function checkNetworkProposals() {
   useLog(reply);
   return reply;
 }
+async function cleanOldLogs() {
+  //
+  //
+  const logFolder = customPath(LOG_PATH);
+  useLog("Running task: cleanOldLogs()");
+  fs.readdir(logFolder, (err, files) => {
+    if (err) {
+      useLog(
+        `Unable to read log folder in '${logFolder}' to delete old files.`
+      );
+    }
+
+    let oldFiles = files
+      .sort((a, b) => {
+        return (
+          parseInt(
+            a
+              .split("-")
+              .slice(-1)
+              .slice(-1)[0]
+          ) -
+          parseInt(
+            b
+              .split("-")
+              .slice(-1)
+              .slice(-1)[0]
+          )
+        );
+      })
+      .slice(0, -1);
+
+    if (oldFiles.length === 0) {
+      useLog("No files found to delete in logs/ folder");
+    } else {
+      useLog(
+        `Trying to delete the folowing files in logs/ folder: ${oldFiles}`
+      );
+      oldFiles.forEach(fileName => {
+        fs.unlink(logFolder + fileName, err => {
+          if (err) {
+            useLog(
+              `Error while trying to delete file ${logFolder + fileName}.`
+            );
+            useLog(err);
+          } else {
+            useLog(`Successfully deleted file: ${logFolder + fileName}.`);
+          }
+        });
+      });
+    }
+  });
+}
 
 async function recursiveTask(task, sendMsgHandler, interval) {
   let db = model.readDb();
@@ -283,5 +336,6 @@ module.exports = {
   INTERVALS: INTERVALS,
   compareGoloopVersionsTask: compareGoloopVersionsTask,
   recursiveTask: recursiveTask,
-  checkNetworkProposals: checkNetworkProposals
+  checkNetworkProposals: checkNetworkProposals,
+  cleanOldLogs: cleanOldLogs
 };
