@@ -328,11 +328,21 @@ async function runNetworkProposalTask() {
   );
   setTimeout(runNetworkProposalTask, tasks.INTERVALS.oneHour);
 }
+// Running recursive task to check for new proposals every hour
+async function runLogCleanupTask() {
+  tasks.recursiveTask(
+    tasks.cleanOldLogs,
+    botSendMsgFunction,
+    tasks.INTERVALS.threeDays
+  );
+  setTimeout(runLogCleanupTask, tasks.INTERVALS.threeDays);
+}
 
 // recursive tasks
 setTimeout(runBlockCheckTask, tasks.INTERVALS.oneMinute);
 setTimeout(runGoloopVersionTask, tasks.INTERVALS.oneDay);
 setTimeout(runNetworkProposalTask, tasks.INTERVALS.oneHour);
+setTimeout(runLogCleanupTask, tasks.INTERVALS.threeDays);
 
 // Catching uncaught exceptions
 function isTelegramErrorType(error) {

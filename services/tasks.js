@@ -30,7 +30,8 @@ const INTERVALS = {
   oneMinute: 60000,
   tenMinutes: 600000,
   oneHour: 3600000,
-  oneDay: 86400000
+  oneDay: 86400000,
+  threeDays: 3 * 86400000
 };
 
 function setAlarmState(data) {
